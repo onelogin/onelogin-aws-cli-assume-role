@@ -1,0 +1,1 @@
+# onelogin-aws-cli-assume-role
