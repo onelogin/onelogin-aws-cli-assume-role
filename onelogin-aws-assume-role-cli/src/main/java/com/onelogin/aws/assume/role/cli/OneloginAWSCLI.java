@@ -1,4 +1,4 @@
-package org.onelogin.aws.assume.role.cli;
+package com.onelogin.aws.assume.role.cli;
 
 
 import java.io.InputStream;
@@ -49,16 +49,16 @@ public class OneloginAWSCLI
         scanner = new Scanner(System.in);
         String appId = scanner.next();
 
-        System.out.print("Onelogin Instance Domain: ");
+        System.out.print("Region: ");
         scanner = new Scanner(System.in);
-        String oneloginDomain = scanner.next();
+        String region = scanner.next();
 
-        SAMLEndpointResponse samlEndpointResponse = olClient.getSAMLAssertion(oneloginUsernameOrEmail, oneloginPassword, appId, oneloginDomain);       
+        SAMLEndpointResponse samlEndpointResponse = olClient.getSAMLAssertion(oneloginUsernameOrEmail, oneloginPassword, appId, region);       
 
         String status = samlEndpointResponse.getType();
         while(status.equals("pending")) {
         	TimeUnit.SECONDS.sleep(30);
-        	samlEndpointResponse = olClient.getSAMLAssertion(oneloginUsernameOrEmail, oneloginPassword, appId, oneloginDomain);
+        	samlEndpointResponse = olClient.getSAMLAssertion(oneloginUsernameOrEmail, oneloginPassword, appId, region);
         	status = samlEndpointResponse.getType();
         }
 

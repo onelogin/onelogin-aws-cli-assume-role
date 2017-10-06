@@ -23,17 +23,17 @@
 String oneloginUsernameOrEmail = request.getParameter("onelogin_username_or_email");
 String oneloginPassword = request.getParameter("onelogin_password");
 String appId = request.getParameter("app_id");
-String oneloginDomain = request.getParameter("onelogin_domain");
+String region = request.getParameter("region");
 
 Client olClient = new Client();
 olClient.getAccessToken();
 
-SAMLEndpointResponse samlEndpointResponse = olClient.getSAMLAssertion(oneloginUsernameOrEmail, oneloginPassword, appId, oneloginDomain);       
+SAMLEndpointResponse samlEndpointResponse = olClient.getSAMLAssertion(oneloginUsernameOrEmail, oneloginPassword, appId, region);       
 
 String status = samlEndpointResponse.getType();
 while(status.equals("pending")) {
 	TimeUnit.SECONDS.sleep(30);
-	samlEndpointResponse = olClient.getSAMLAssertion(oneloginUsernameOrEmail, oneloginPassword, appId, oneloginDomain);
+	samlEndpointResponse = olClient.getSAMLAssertion(oneloginUsernameOrEmail, oneloginPassword, appId, region);
 	status = samlEndpointResponse.getType();
 }
 
