@@ -13,7 +13,7 @@
 <label>Onelogin Username or Email</label><input type="text" name="onelogin_username_or_email" /><br/>  
 <label>Onelogin Password</label><input type="password" name="onelogin_password"> <br/>  
 <label>Onelogin App ID</label><input type="text" name="app_id"> <br/>  
-<label>Region</label><input type="text" name="region"/><br/>
+<label>Onelogin Domain</label><input type="text" name="onelogin_domain"/><br/>
 <input type="submit" value="Submit"/>  
 </form>
 </body>

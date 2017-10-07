@@ -49,16 +49,16 @@ public class OneloginAWSCLI
         scanner = new Scanner(System.in);
         String appId = scanner.next();
 
-        System.out.print("Region: ");
+        System.out.print("Onelogin Instance Domain: ");
         scanner = new Scanner(System.in);
-        String region = scanner.next();
+        String oneloginDomain = scanner.next();
 
-        SAMLEndpointResponse samlEndpointResponse = olClient.getSAMLAssertion(oneloginUsernameOrEmail, oneloginPassword, appId, region);       
+        SAMLEndpointResponse samlEndpointResponse = olClient.getSAMLAssertion(oneloginUsernameOrEmail, oneloginPassword, appId, oneloginDomain);
 
         String status = samlEndpointResponse.getType();
         while(status.equals("pending")) {
         	TimeUnit.SECONDS.sleep(30);
-        	samlEndpointResponse = olClient.getSAMLAssertion(oneloginUsernameOrEmail, oneloginPassword, appId, region);
+                samlEndpointResponse = olClient.getSAMLAssertion(oneloginUsernameOrEmail, oneloginPassword, appId, oneloginDomain);
         	status = samlEndpointResponse.getType();
         }
 
