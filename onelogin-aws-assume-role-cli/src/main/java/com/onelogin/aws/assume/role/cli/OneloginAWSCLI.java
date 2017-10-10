@@ -114,13 +114,13 @@ public class OneloginAWSCLI {
                         awsRegion = defaultAWSRegion;
                     }
 
-                    BasicAWSCredentials awsCreds = new BasicAWSCredentials("", "");
+                    BasicAWSCredentials awsCredentials = new BasicAWSCredentials("", "");
 
                     AWSSecurityTokenServiceClientBuilder stsBuilder = AWSSecurityTokenServiceClientBuilder.standard();
 
                     AWSSecurityTokenService stsClient = stsBuilder
                         .withRegion(awsRegion)
-                        .withCredentials(new AWSStaticCredentialsProvider(awsCreds))
+                        .withCredentials(new AWSStaticCredentialsProvider(awsCredentials))
                         .build();
 
 	                AssumeRoleWithSAMLResult assumeRoleWithSAMLResult = stsClient.assumeRoleWithSAML(assumeRoleWithSAMLRequest);
