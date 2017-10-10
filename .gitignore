@@ -6,3 +6,5 @@ target
 .settings
 .project
 *.properties
+*/out
+.DS_Store
