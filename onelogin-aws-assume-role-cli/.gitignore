@@ -6,3 +6,5 @@ target
 .settings
 .project
 src/main/resources/*.properties
+*/out
+.DS_Store

@@ -92,3 +92,24 @@ BasicSessionCredentials temporaryCredentials = new BasicSessionCredentials(
 
 AmazonS3Client s3 = new AmazonS3Client(temporaryCredentials); 
 ```
+
+## Use the JAR file.
+
+The onelogin-aws-assume-role-cli provides 2 jars:
+* onelogin-aws-assume-role-cli.jar
+* onelogin-aws-assume-role-cli-jar-with-dependencies.jar
+
+You can get them executing
+```
+mvn package
+```
+
+You can execute each jar with:
+```
+java -jar onelogin-aws-assume-role-cli-jar-with-dependencies.jar
+```
+
+By default the jar will try to get AWS credentials from ~/.aws/credentials on Linux, macOS, or Unix, or at C:\Users\USERNAME \.aws\credentials on Windows.
+But you can create a [onelogin.aws.properties](https://github.com/onelogin/onelogin-aws-cli-assume-role/blob/master/onelogin-aws-assume-role-cli/src/main/resources/onelogin.aws.properties) file.
+
+The jar uses OneLogin SDK so a [onelogin.sdk.properties](https://github.com/onelogin/onelogin-aws-cli-assume-role/blob/master/onelogin-aws-assume-role-cli/src/main/resources/onelogin.sdk.properties) file need to be provided on the same folder than the jar.

@@ -14,9 +14,9 @@
   <dependencies>
     <dependency>
       <groupId>com.amazonaws</groupId>
-      <artifactId>aws-java-sdk</artifactId>
-      <version>1.11.105</version>
-      </dependency>
+      <artifactId>aws-java-sdk-sts</artifactId>
+      <version>1.11.191</version>
+    </dependency>
     <dependency>
       <groupId>com.onelogin</groupId>
       <artifactId>onelogin-java-sdk</artifactId>
