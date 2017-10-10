@@ -1,13 +1,12 @@
 package com.onelogin.aws.assume.role.cli;
 
-import java.io.InputStream;
 import java.util.concurrent.TimeUnit;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Scanner;
-import com.amazonaws.auth.AWSCredentials;
+
+import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.PropertiesCredentials;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder;
@@ -15,6 +14,7 @@ import com.amazonaws.services.securitytoken.model.AssumeRoleWithSAMLRequest;
 import com.amazonaws.services.securitytoken.model.AssumeRoleWithSAMLResult;
 import com.amazonaws.services.securitytoken.model.AssumedRoleUser;
 import com.amazonaws.services.securitytoken.model.Credentials;
+
 import com.onelogin.saml2.authn.SamlResponse;
 import com.onelogin.saml2.http.HttpRequest;
 import com.onelogin.sdk.conn.Client;
@@ -100,39 +100,50 @@ public class OneloginAWSCLI {
 	                String[] selectedRoleData = selectedRole.split(",");
 	                String roleArn = selectedRoleData[0];
 	                String principalArn = selectedRoleData[1];
-	                AssumeRoleWithSAMLRequest assumeRoleWithSAMLRequest = new AssumeRoleWithSAMLRequest()
-	                        .withPrincipalArn(principalArn).withRoleArn(roleArn).withSAMLAssertion(samlResponse);
-	                System.out.print("AWS Region (Ex: eu-west-1): ");
+
+                    AssumeRoleWithSAMLRequest assumeRoleWithSAMLRequest = new AssumeRoleWithSAMLRequest()
+                            .withPrincipalArn(principalArn)
+                            .withRoleArn(roleArn)
+                            .withSAMLAssertion(samlResponse);
+
+                    // AWS REGION
+                    String defaultAWSRegion = Regions.DEFAULT_REGION.getName();
+                    System.out.print("AWS Region (" + defaultAWSRegion + "): ");
 	                String awsRegion = scanner.next();
                     if (awsRegion.isEmpty() || awsRegion.equals("-")) {
-                        awsRegion = Regions.DEFAULT_REGION.getName();
+                        awsRegion = defaultAWSRegion;
                     }
 
-                    OneloginAWSCLI awscli = new OneloginAWSCLI();    	
-                    InputStream credentialStream = awscli.getFileInputStream("onelogin.aws.properties");
+                    BasicAWSCredentials awsCreds = new BasicAWSCredentials("", "");
 
                     AWSSecurityTokenServiceClientBuilder stsBuilder = AWSSecurityTokenServiceClientBuilder.standard();
 
-                    if (credentialStream != null) {
-                        AWSCredentials awsCredentials = new PropertiesCredentials(credentialStream);
-                        stsBuilder.withCredentials(new AWSStaticCredentialsProvider(awsCredentials));
-                    }
+                    AWSSecurityTokenService stsClient = stsBuilder
+                        .withRegion(awsRegion)
+                        .withCredentials(new AWSStaticCredentialsProvider(awsCreds))
+                        .build();
 
-                    AWSSecurityTokenService stsClient = stsBuilder.withRegion(awsRegion).build();
 	                AssumeRoleWithSAMLResult assumeRoleWithSAMLResult = stsClient.assumeRoleWithSAML(assumeRoleWithSAMLRequest);
-	                Credentials stsCredentials = assumeRoleWithSAMLResult.getCredentials();
-	                AssumedRoleUser assumedRoleUser = assumeRoleWithSAMLResult.getAssumedRoleUser();
+
+                    Credentials stsCredentials = assumeRoleWithSAMLResult.getCredentials();
+                    AssumedRoleUser assumedRoleUser = assumeRoleWithSAMLResult.getAssumedRoleUser();
+
 	                System.out.println();
-	                System.out.println("AssumedRoleUser: " + assumedRoleUser.getArn());
+	                System.out.println("Assumed Role User: " + assumedRoleUser.getArn());
+                    System.out.println("-----------------------------------------------------------------------");
+                    System.out.println("| Success!                                                            |");
+                    System.out.println("|                                                                     |");
+                    System.out.println("| Temporary AWS Credentials Granted via OneLogin                      |");
+                    System.out.println("|                                                                     |");
+                    System.out.println("| Copy/Paste to set these as environment variables                    |");
 	                System.out.println("-----------------------------------------------------------------------");
-	                System.out.println("| Temporal AWS Credential (You can register as environment variables) |");
-	                System.out.println("-----------------------------------------------------------------------");
 	                System.out.println();
-	                System.out.println("set AWS_SESSION_TOKEN=" + stsCredentials.getSessionToken());
+	                System.out.println("export AWS_SESSION_TOKEN=" + stsCredentials.getSessionToken());
 	                System.out.println();
-	                System.out.println("set AWS_ACCESS_KEY_ID=" + stsCredentials.getAccessKeyId());
+	                System.out.println("export AWS_ACCESS_KEY_ID=" + stsCredentials.getAccessKeyId());
 	                System.out.println();
-	                System.out.println("set AWS_SECRET_ACCESS_KEY=" + stsCredentials.getSecretAccessKey());
+                    System.out.println("export AWS_SECRET_ACCESS_KEY=" + stsCredentials.getSecretAccessKey());
+                    System.out.println();
                 }
             }
         }
@@ -140,9 +151,4 @@ public class OneloginAWSCLI {
             scanner.close();
         }
     }
-    
-    private InputStream getFileInputStream(String propFileName) {
-    	return getClass().getClassLoader().getResourceAsStream(propFileName);
-    }
-    
 }

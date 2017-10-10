@@ -6,3 +6,4 @@ target
 .settings
 .project
 *.properties
+*.DS_STore
