@@ -47,6 +47,8 @@
           </execution>
         </executions>
         <configuration>
+          <appendAssemblyId>false</appendAssemblyId>
+          <outputDirectory>${basedir}/dist/</outputDirectory>
           <descriptors>
             <descriptor>src/assembly/distribution.xml</descriptor>
           </descriptors>
@@ -71,7 +73,7 @@
               <goal>copy-resources</goal>
             </goals>
             <configuration>
-              <outputDirectory>${basedir}/target/</outputDirectory>
+              <outputDirectory>${basedir}/dist/</outputDirectory>
               <resources>
                 <resource>
                   <directory>src/main/resources</directory>
