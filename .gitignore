@@ -7,3 +7,4 @@ target
 .project
 *.properties
 *.DS_STore
+*.vscode
