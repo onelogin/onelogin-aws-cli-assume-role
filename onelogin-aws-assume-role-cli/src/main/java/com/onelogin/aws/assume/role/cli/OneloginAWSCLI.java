@@ -34,7 +34,12 @@ public class OneloginAWSCLI {
             System.out.print("OneLogin Username: ");
             String oneloginUsernameOrEmail = scanner.next();
             System.out.print("OneLogin Password: ");
-            String oneloginPassword = scanner.next();
+            String oneloginPassword = null;
+            try {
+                oneloginPassword = String.valueOf(System.console().readPassword());
+            } catch (Exception e){
+                oneloginPassword = scanner.next();
+            }
             System.out.print("AWS App ID: ");
             String appId = scanner.next();
             System.out.print("Onelogin Instance Sub Domain: ");
