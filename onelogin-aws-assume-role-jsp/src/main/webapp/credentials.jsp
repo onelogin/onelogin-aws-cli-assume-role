@@ -4,7 +4,7 @@
 <%@page import="java.io.InputStream"%>
 <%@page import="com.onelogin.saml2.authn.SamlResponse"%>
 <%@page import="com.onelogin.saml2.http.HttpRequest"%>
-<%@page import="com.amazonaws.auth.AWSCredentials"%>
+<%@page import="com.amazonaws.auth.BasicAWSCredentials"%>
 <%@page import="com.amazonaws.auth.AWSStaticCredentialsProvider"%>
 <%@page import="com.amazonaws.auth.PropertiesCredentials"%>
 <%@page import="com.amazonaws.services.securitytoken.AWSSecurityTokenService"%>
@@ -37,11 +37,14 @@ AssumeRoleWithSAMLRequest assumeRoleWithSAMLRequest = new AssumeRoleWithSAMLRequ
 		.withRoleArn(roleArn)
 		.withSAMLAssertion(samlResponse);
 
-InputStream credentialStream = Thread.currentThread().getContextClassLoader().getResourceAsStream("onelogin.aws.properties");
-AWSCredentials awsCredentials = new PropertiesCredentials(credentialStream);
+BasicAWSCredentials awsCredentials = new BasicAWSCredentials("", "");
 
-AWSSecurityTokenServiceClientBuilder stsBuilder = AWSSecurityTokenServiceClientBuilder.standard().withCredentials(new AWSStaticCredentialsProvider(awsCredentials));
-AWSSecurityTokenService stsClient = stsBuilder.withRegion(awsRegion).build();
+AWSSecurityTokenServiceClientBuilder stsBuilder = AWSSecurityTokenServiceClientBuilder.standard();
+
+AWSSecurityTokenService stsClient = stsBuilder
+    .withRegion(awsRegion)
+    .withCredentials(new AWSStaticCredentialsProvider(awsCredentials))
+    .build();
 
 AssumeRoleWithSAMLResult assumeRoleWithSAMLResult = stsClient.assumeRoleWithSAML(assumeRoleWithSAMLRequest);
 
