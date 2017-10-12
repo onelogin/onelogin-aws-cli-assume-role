@@ -63,7 +63,7 @@ if (status.equals("success")) {
 	} else {
 		samlResponse = samlEndpointResponse.getSAMLResponse();
 %>
-	<p>We retrieved that SAMLResponse from Onelogin that will be used in order to assume an AWS Role</p>
+	<p>We retrieved that SAMLResponse from OneLogin that will be used in order to assume an AWS Role</p>
 	<form action="select_awsrole.jsp" method="POST">
 	<label>SAMLResponse</label><br>
 	<textarea rows="10" cols="50" name="saml_response"><%=samlResponse %></textarea><br>

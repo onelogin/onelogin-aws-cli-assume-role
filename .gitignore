@@ -5,4 +5,5 @@ target
 .classpath
 .settings
 .project
-*.properties
+*.DS_STore
+*.vscode

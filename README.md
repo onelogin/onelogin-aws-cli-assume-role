@@ -53,15 +53,12 @@ Select a [Tomcat Server](http://crunchify.com/step-by-step-guide-to-setup-and-in
 
 ### Settings
 
-Both projects uses 2 kind of settings files that can be found at *src/resources* folder:
+Both projects uses a settings file, where [OneLogin SDK properties](https://github.com/onelogin/onelogin-java-sdk#settings) are placed, that can be found at *src/resources* folder:
 
 * *onelogin.sdk.properties* used onelogin-java-sdk. That file contains 3 settings parameters:
   * onelogin.sdk.client_id  Onelogin OAuth2 client ID
   * onelogin.sdk.client_secret  Onelogin OAuth2 client secret
   * onelogin.sdk.instance  Indicates where the instance is hosted. Possible values: 'us' or 'eu'.
-* *onelogin.aws.properties* used by aws-java-sdk. That file contains 2 settings parameters:
-  * accessKey [AWS Access Key ID](http://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html)
-  * secretKey AWS Secret Key
 
 ### How it works
 
@@ -92,3 +89,21 @@ BasicSessionCredentials temporaryCredentials = new BasicSessionCredentials(
 
 AmazonS3Client s3 = new AmazonS3Client(temporaryCredentials); 
 ```
+
+## Use the JAR file.
+
+The onelogin-aws-assume-role-cli provides 2 jars:
+* onelogin-aws-assume-role-cli.jar
+* onelogin-aws-assume-role-cli-jar-with-dependencies.jar
+
+You can get them executing
+```
+mvn package
+```
+
+You can execute each jar with:
+```
+java -jar onelogin-aws-assume-role-cli-jar-with-dependencies.jar
+```
+
+The jar uses OneLogin SDK so a [onelogin.sdk.properties](https://github.com/onelogin/onelogin-aws-cli-assume-role/blob/master/onelogin-aws-assume-role-cli/src/main/resources/onelogin.sdk.properties) file need to be provided on the same folder than the jar.

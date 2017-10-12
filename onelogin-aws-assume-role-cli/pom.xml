@@ -1,6 +1,7 @@
 <?xml version="1.0"?>
-<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"
+  xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>com.onelogin</groupId>
@@ -8,6 +9,8 @@
     <version>1.0.0</version>
   </parent>
   <artifactId>onelogin-aws-assume-role-cli</artifactId>
+  <!-- Output to jar format -->
+  <packaging>jar</packaging>
   <name>onelogin-aws-assume-role-cli</name>
   <url>http://maven.apache.org</url>
   <properties>
@@ -16,9 +19,9 @@
   <dependencies>
     <dependency>
       <groupId>com.amazonaws</groupId>
-      <artifactId>aws-java-sdk</artifactId>
-      <version>1.11.105</version>
-      </dependency>
+      <artifactId>aws-java-sdk-sts</artifactId>
+      <version>1.11.191</version>
+    </dependency>
     <dependency>
       <groupId>com.onelogin</groupId>
       <artifactId>onelogin-java-sdk</artifactId>
@@ -30,4 +33,59 @@
       <version>2.0.1</version>
     </dependency>
   </dependencies>
+  <build>
+    <finalName>onelogin-aws-cli</finalName>
+    <plugins>
+      <plugin>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>single</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <appendAssemblyId>false</appendAssemblyId>
+          <outputDirectory>${basedir}/dist/</outputDirectory>
+          <descriptors>
+            <descriptor>src/assembly/distribution.xml</descriptor>
+          </descriptors>
+          <archive>
+            <manifest>
+              <mainClass>com.onelogin.aws.assume.role.cli.OneloginAWSCLI</mainClass>
+            </manifest>
+            <manifestEntries>
+              <Class-Path>.</Class-Path>
+            </manifestEntries>
+          </archive>
+        </configuration>
+      </plugin>
+      <plugin>
+        <artifactId>maven-resources-plugin</artifactId>
+        <version>3.0.2</version>
+        <executions>
+          <execution>
+            <id>copy-resources</id>
+            <phase>process-resources</phase>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${basedir}/dist/</outputDirectory>
+              <resources>
+                <resource>
+                  <directory>src/main/resources</directory>
+                  <includes>
+                    <include>onelogin.sdk.properties</include>
+                  </includes>
+                </resource>
+              </resources>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
 </project>
