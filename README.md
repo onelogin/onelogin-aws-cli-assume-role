@@ -7,16 +7,13 @@ Users will be able to choose from among multiple AWS roles in multiple AWS accou
 
 This is really useful for customers that run complex environments with multiple AWS accounts, roles and many different people that need periodic access as it saves manually generating and managing AWS credentials.
 
-This repository contains:
+This repository contains 2 different examples in how to get the temporary AWS acccess credentials:
 - onelogin-aws-assume-role-cli. Command Line Interface version.
 - onelogin-aws-assume-role-jsp. An example web (JSP) version.
 
-If you want to get up and running quickly then we recommend using a precompiled distribution [onelogin-aws-cli.jar](https://github.com/onelogin/onelogin-aws-cli-assume-role/blob/master/onelogin-aws-assume-role-cli/dist/onelogin-aws-cli.jar). Follow [those instructions](https://developers.onelogin.com/api-docs/1/samples/aws-cli).
+You can use the code of the examples and integrate them on your tools.
 
-You can re-generate the jar by executing at the onelogin-aws-assume-role-cli folder the command:
-```
-mvn package
-```
+If you want to see how easy is to get credentials, a quickly way is using a precompiled distribution [onelogin-aws-cli.jar](https://github.com/onelogin/onelogin-aws-cli-assume-role/blob/master/onelogin-aws-assume-role-cli/dist/onelogin-aws-cli.jar), following [those instructions](https://developers.onelogin.com/api-docs/1/samples/aws-cli).
 
 ## AWS and OneLogin pre-requisites
 
@@ -121,6 +118,13 @@ Adding onelogin-aws-assume-role-cli or onelogin-aws-assume-role-jsp as a project
 ### CLI
 
 In order to execute the cli code, at the Package Explorer, select the onelogin-aws-assume-role-cli, 2nd bottom of the mouse and Run As > Java application and select the OneloginAWSCLI.
+
+You can see detailed info about how to play with the onelogin-aws-cli.jar precompiled version at [OneLogin Developer site](https://developers.onelogin.com/api-docs/1/samples/aws-cli).
+
+You can re-generate the jar by executing at the onelogin-aws-assume-role-cli folder the command:
+```
+mvn package
+```
 
 ### JSP 
 
