@@ -58,18 +58,29 @@ public class OneloginAWSCLI {
                 if (samlEndpointResponse.getMFA() != null) {
                     MFA mfa = samlEndpointResponse.getMFA();
                     List<Device> devices = mfa.getDevices();
-                    System.out.print("MFA required");
+                    System.out.println();
+                    System.out.println("MFA Required");
+                    System.out.println("Authenticate using one of these devices:");
+                    System.out.println("-----------------------------------------------------------------------");
                     Device device;
                     for (int i = 0; i < devices.size(); i++) {
                         device = devices.get(i);
-                        System.out.print(" - " + device.getType() + "ID: " + device.getID());
+                        System.out.println(" " + i + " | " + device.getType());
                     }
-                    System.out.print("\nSelect the desired Device ID: ");
-                    String deviceId = scanner.next();
-                    System.out.print("OTP Token: ");
+                    System.out.println("-----------------------------------------------------------------------");
+                    System.out.print("\nSelect the desired MFA Device [0-" + (devices.size() - 1) + "]: ");
+                    Device deviceSelection = devices.get(Integer.valueOf(scanner.next()));
+                    Long deviceId = deviceSelection.getID();
+
+                    System.out.print("Enter the token for " + deviceSelection.getType() + ": ");
                     String otpToken = scanner.next();
-                    SAMLEndpointResponse samlEndpointResponseAfterVerify = olClient.getSAMLAssertionVerifying(appId, deviceId,
-                            mfa.getStateToken(), otpToken, null);
+                    SAMLEndpointResponse samlEndpointResponseAfterVerify = olClient.getSAMLAssertionVerifying(
+                        appId,
+                        deviceId.toString(),
+                        mfa.getStateToken(),
+                        otpToken,
+                        null
+                    );
                     samlResponse = samlEndpointResponseAfterVerify.getSAMLResponse();
                 } else {
                     samlResponse = samlEndpointResponse.getSAMLResponse();
@@ -85,14 +96,16 @@ public class OneloginAWSCLI {
                 String selectedRole = "";
                 List<String> roleData = attributes.get("https://aws.amazon.com/SAML/Attributes/Role");
                 if (roleData.size() > 1) {
-                    System.out.println("Available Roles...");
+                    System.out.println("\nAvailable AWS Roles");
+                    System.out.println("-----------------------------------------------------------------------");
                     for (int i = 0; i < roleData.size(); i++) {
                         String[] roleInfo = roleData.get(i).split(":");
                         String accountId = roleInfo[4];
                         String roleName = roleInfo[5].replace("role/", "");
-                        System.out.println(" " + i + ". " + roleName + "(Account " + accountId + ")");
+                        System.out.println(" " + i + " | " + roleName + " (Account " + accountId + ")");
                     }
-                    System.out.print("Select the desired Role [0-" + (roleData.size() - 1) + "]:");
+                    System.out.println("-----------------------------------------------------------------------");
+                    System.out.print("Select the desired Role [0-" + (roleData.size() - 1) + "]: ");
                     Integer roleSelection = Integer.valueOf(scanner.next());
                     selectedRole = roleData.get(roleSelection);
                 } else if (roleData.size() == 1){
