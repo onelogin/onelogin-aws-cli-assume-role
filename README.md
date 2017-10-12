@@ -1,17 +1,21 @@
 onelogin-aws-assume-role
 ========================
 
-Assume an AWS Role and cache credentials using Onelogin.
+Assume an AWS Role and get temporary credentials using Onelogin.
 
-Users will be able to choose from among multiple AWS roles in multiple AWS accounts when they sign in using OneLogin in order to assume an AWS Role and get AWS temporal credentials.
+Users will be able to choose from among multiple AWS roles in multiple AWS accounts when they sign in using OneLogin in order to assume an AWS Role and obtain temporary AWS acccess credentials.
 
-This repository contains:
+This is really useful for customers that run complex environments with multiple AWS accounts, roles and many different people that need periodic access as it saves manually generating and managing AWS credentials.
+
+This repository contains 2 different examples in how to get the temporary AWS acccess credentials:
 - onelogin-aws-assume-role-cli. Command Line Interface version.
-- onelogin-aws-assume-role-jsp. A JSP (web) version.
+- onelogin-aws-assume-role-jsp. An example web (JSP) version.
 
+You can use the code of the examples and integrate them on your tools.
 
-AWS and Onelogin pre-requisites
--------------------------------
+If you want to see how easy is to get credentials, a quickly way is using a precompiled distribution [onelogin-aws-cli.jar](https://github.com/onelogin/onelogin-aws-cli-assume-role/blob/master/onelogin-aws-assume-role-cli/dist/onelogin-aws-cli.jar), following [those instructions](https://developers.onelogin.com/api-docs/1/samples/aws-cli).
+
+## AWS and OneLogin pre-requisites
 
 The "[Configuring SAML for Amazon Web Services (AWS) with Multiple Accounts and Roles](https://support.onelogin.com/hc/en-us/articles/212802926-Configuring-SAML-for-Amazon-Web-Services-AWS-with-Multiple-Accounts-and-Roles)" guide explains how to:
  - Add the AWS Multi Account app to OneLogin
@@ -22,32 +26,45 @@ The "[Configuring SAML for Amazon Web Services (AWS) with Multiple Accounts and 
 
 ## Installation
 ### Hosting
+
+#### Github
+
 The project is hosted at github. You can download it from:
 * Lastest release: https://github.com/onelogin/onelogin-aws-cli-assume-role/releases/latest
 * Master repo: https://github.com/onelogin/onelogin-aws-cli-assume-role/tree/master
 
+#### Maven
+
+The toolkit is hosted at [Sonatype OSSRH (OSS Repository Hosting)](http://central.sonatype.org/pages/ossrh-guide.html) that is synced to the Central Repository.
+
+Install it as a maven dependecy:
+
+aws-cli
+```
+  <dependency>
+      <groupId>com.onelogin</groupId>
+      <artifactId>onelogin-aws-assume-role-cli</artifactId>
+      <version>1.0.0</version>
+  </dependency>
+```
+
+aws-jsp
+```
+  <dependency>
+      <groupId>com.onelogin</groupId>
+      <artifactId>onelogin-aws-assume-role-jsp</artifactId>
+      <version>1.0.0</version>
+  </dependency>
+```
+
 ### Dependencies
+
+It works with Java7 and Java8.
 
 * [com.amazonaws:aws-java-sdk](https://github.com/aws/aws-sdk-java)
 * [com.onelogin:onelogin-java-sdk](https://github.com/onelogin/onelogin-java-sdk)
 * [com.onelogin:java-saml-core](https://github.com/onelogin/java-saml)
-* javax.servlet:servlet-api Required by the Web project
-
-## Working with the github repository code and Eclipse.
-
-### Get the code.
-The code is hosted at github. You can download it from:
-* Lastest release: https://github.com/onelogin/onelogin-aws-cli-assume-role/releases/latest
-* Master repo: https://github.com/onelogin/onelogin-aws-cli-assume-role/tree/master
-
-### Adding onelogin-aws-assume-role-cli or onelogin-aws-assume-role-jsp as a project
-1. Open Eclipse and set a workspace
-2. File > Import > Maven : Existing Maven Projects > Select the path where the repository was downloaded, resolve the Workspace project folder and select the pom.xml
-
-### Deploy the onelogin-aws-assume-role-jsp
-
-At the Package Explorer, select the onelogin-aws-assume-role-jsp, 2nd bottom of the mouse and Run As > Run Server
-Select a [Tomcat Server](http://crunchify.com/step-by-step-guide-to-setup-and-install-apache-tomcat-server-in-eclipse-development-environment-ide/) in order to deploy the server.
+* javax.servlet:servlet-api Required by the example Web project
 
 ## Getting started
 
@@ -55,18 +72,18 @@ Select a [Tomcat Server](http://crunchify.com/step-by-step-guide-to-setup-and-in
 
 Both projects uses a settings file, where [OneLogin SDK properties](https://github.com/onelogin/onelogin-java-sdk#settings) are placed, that can be found at *src/resources* folder:
 
-* *onelogin.sdk.properties* used onelogin-java-sdk. That file contains 3 settings parameters:
+* *onelogin.sdk.properties* used by onelogin-java-sdk. That file contains 3 settings parameters:
   * onelogin.sdk.client_id  Onelogin OAuth2 client ID
   * onelogin.sdk.client_secret  Onelogin OAuth2 client secret
   * onelogin.sdk.instance  Indicates where the instance is hosted. Possible values: 'us' or 'eu'.
 
-### How it works
+### How the process works
 
-#### Step 1. Provide Onelogin data.
+#### Step 1. Provide OneLogin data.
 
-- Provide Onelogin's username/mail and password to authenticate the user
-- Provide the Onelogin's App ID to identify the AWS app
-- Provide the domain of your Onelogin's instance.
+- Provide OneLogin's username/mail and password to authenticate the user
+- Provide the OneLogin's App ID to identify the AWS app
+- Provide the domain of your OneLogin's instance.
 
 With that data, a SAMLResponse is retrieved. And possible AWS Role are retrieved.
 
@@ -90,20 +107,26 @@ BasicSessionCredentials temporaryCredentials = new BasicSessionCredentials(
 AmazonS3Client s3 = new AmazonS3Client(temporaryCredentials); 
 ```
 
-## Use the JAR file.
+## Usage
 
-The onelogin-aws-assume-role-cli provides 2 jars:
-* onelogin-aws-assume-role-cli.jar
-* onelogin-aws-assume-role-cli-jar-with-dependencies.jar
+## Working with the github repository code and Eclipse.
 
-You can get them executing
+Adding onelogin-aws-assume-role-cli or onelogin-aws-assume-role-jsp as a project
+1. Open Eclipse and set a workspace
+2. File > Import > Maven : Existing Maven Projects > Select the path where the repository was downloaded, resolve the Workspace project folder and select the pom.xml
+
+### CLI
+
+In order to execute the cli code, at the Package Explorer, select the onelogin-aws-assume-role-cli, 2nd bottom of the mouse and Run As > Java application and select the OneloginAWSCLI.
+
+You can see detailed info about how to play with the onelogin-aws-cli.jar precompiled version at [OneLogin Developer site](https://developers.onelogin.com/api-docs/1/samples/aws-cli).
+
+You can re-generate the jar by executing at the onelogin-aws-assume-role-cli folder the command:
 ```
 mvn package
 ```
 
-You can execute each jar with:
-```
-java -jar onelogin-aws-assume-role-cli-jar-with-dependencies.jar
-```
+### JSP 
 
-The jar uses OneLogin SDK so a [onelogin.sdk.properties](https://github.com/onelogin/onelogin-aws-cli-assume-role/blob/master/onelogin-aws-assume-role-cli/src/main/resources/onelogin.sdk.properties) file need to be provided on the same folder than the jar.
+If you want to deploy the web example, at the Package Explorer, select the onelogin-aws-assume-role-jsp, 2nd bottom of the mouse and Run As > Run Server
+Select a [Tomcat Server](http://crunchify.com/step-by-step-guide-to-setup-and-install-apache-tomcat-server-in-eclipse-development-environment-ide/) in order to deploy the server.
