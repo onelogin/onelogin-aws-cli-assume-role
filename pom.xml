@@ -3,9 +3,11 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.onelogin</groupId>
   <artifactId>onelogin-aws-assume-role</artifactId>
-  <version>1.0.0-SNAPSHOT</version>
+  <version>1.0.0</version>
   <packaging>pom</packaging>
   <name>onelogin-aws-assume-role</name>
+  <description>Onelogin AWS Assume Role (Multi Account).</description>
+  <url>https://github.com/onelogin/onelogin-aws-cli-assume-role</url>
   <modules>
     <module>onelogin-aws-assume-role-cli</module>
     <module>onelogin-aws-assume-role-jsp</module>
@@ -29,7 +31,18 @@
     <url>https://github.com/onelogin/onelogin-aws-cli-assume-role</url>
     <tag>HEAD</tag>
   </scm>
-
+  <developers>
+    <developer>
+      <name>Sixto Martín García</name>
+      <url>https://github.com/pitbulk</url>
+      <organization>OneLogin</organization>
+    </developer>
+    <developer>
+      <name>Rich Chetwynd</name>
+      <url>https://github.com/richet</url>
+      <organization>OneLogin</organization>
+    </developer>
+  </developers>
   <licenses>
     <license>
       <name>MIT License</name>
