@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.onelogin</groupId>
   <artifactId>onelogin-aws-assume-role</artifactId>
-  <version>1.0.1-SNAPSHOT</version>
+  <version>1.0.0-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>onelogin-aws-assume-role</name>
   <modules>

@@ -13,7 +13,7 @@ This repository contains 2 different examples in how to get the temporary AWS ac
 
 You can use the code of the examples and integrate them on your tools.
 
-If you want to see how easy is to get credentials, a quickly way is using a precompiled distribution [onelogin-aws-cli.jar](https://github.com/onelogin/onelogin-aws-cli-assume-role/blob/master/onelogin-aws-assume-role-cli/dist/onelogin-aws-cli.jar), following [those instructions](https://developers.onelogin.com/api-docs/1/samples/aws-cli).
+If you want to see how easy it is to get credentials, a quickly way is using a precompiled distribution [onelogin-aws-cli.jar](https://github.com/onelogin/onelogin-aws-cli-assume-role/blob/master/onelogin-aws-assume-role-cli/dist/onelogin-aws-cli.jar), following [those instructions](https://developers.onelogin.com/api-docs/1/samples/aws-cli).
 
 ## AWS and OneLogin pre-requisites
 
