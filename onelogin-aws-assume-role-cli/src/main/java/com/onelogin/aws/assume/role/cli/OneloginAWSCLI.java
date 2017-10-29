@@ -46,7 +46,7 @@ public class OneloginAWSCLI {
 	private static int time = 45;
 	private static int loop = 1;
 	private static String profileName = null;
-	private static File file = AwsProfileFileLocationProvider.DEFAULT_CREDENTIALS_LOCATION_PROVIDER.getLocation();
+	private static File file = null;
 
 	public static void commandParser(final String[] commandLineArguments) {
 		final CommandLineParser cmd = new DefaultParser();
@@ -96,8 +96,7 @@ public class OneloginAWSCLI {
 		final Options options = new Options();
 		options.addOption("t", "time", true, "Sleep time between iterations, in minutes  [15-60 min]");
 		options.addOption("l", "loop", true, "Number of iterations");
-		options.addOption("p", "profile", true, "Save Temporal AWS credentials using that profile name. " +
-												"If not used, data is prompted instead saved");
+		options.addOption("p", "profile", true, "Save Temporal AWS credentials using that profile name");
 		options.addOption("f", "file", true, "Set a custom path to save the AWS credentials. (if not used, default path is used)");
 		return options;
 	}
@@ -212,7 +211,7 @@ public class OneloginAWSCLI {
 				Credentials stsCredentials = assumeRoleWithSAMLResult.getCredentials();
 				AssumedRoleUser assumedRoleUser = assumeRoleWithSAMLResult.getAssumedRoleUser();
 
-				if (profileName == null) {
+				if (profileName == null && file == null) {
 					String action = "export";
 					if (System.getProperty("os.name").toLowerCase().indexOf("win") != -1) {
 						action = "set";
@@ -234,6 +233,14 @@ public class OneloginAWSCLI {
 					System.out.println(action + " AWS_SECRET_ACCESS_KEY=" + stsCredentials.getSecretAccessKey());
 					System.out.println();
 				} else {
+					if (file == null) {
+						file = AwsProfileFileLocationProvider.DEFAULT_CREDENTIALS_LOCATION_PROVIDER.getLocation();
+					}
+					if (profileName == null) {
+						profileName = "default";
+					}
+					
+					
 					Map<String, String> properties = new HashMap<String, String>();
 					properties.put(ProfileKeyConstants.AWS_ACCESS_KEY_ID, stsCredentials.getAccessKeyId());
 					properties.put(ProfileKeyConstants.AWS_SECRET_ACCESS_KEY, stsCredentials.getSecretAccessKey());
