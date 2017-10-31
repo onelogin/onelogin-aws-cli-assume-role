@@ -7,15 +7,13 @@ Users will be able to choose from among multiple AWS roles in multiple AWS accou
 
 This is really useful for customers that run complex environments with multiple AWS accounts, roles and many different people that need periodic access as it saves manually generating and managing AWS credentials.
 
-This repository contains 2 different examples in how to get the temporary AWS acccess credentials:
+This repository contains 2 examples of how to get the temporary AWS acccess credentials:
 - onelogin-aws-assume-role-cli. Command Line Interface version.
 - onelogin-aws-assume-role-jsp. An example web (JSP) version.
 
-You can use the code of the examples and integrate them on your tools.
+Most people want the CLI tool so check that you have the prequisites in place and get started.
 
-If you want to see how easy it is to get credentials, a quickly way is using a precompiled distribution [onelogin-aws-cli.jar](https://github.com/onelogin/onelogin-aws-cli-assume-role/blob/master/onelogin-aws-assume-role-cli/dist/onelogin-aws-cli.jar), following [those instructions](https://developers.onelogin.com/api-docs/1/samples/aws-cli).
-
-## AWS and OneLogin pre-requisites
+## AWS and OneLogin prerequisites
 
 The "[Configuring SAML for Amazon Web Services (AWS) with Multiple Accounts and Roles](https://support.onelogin.com/hc/en-us/articles/212802926-Configuring-SAML-for-Amazon-Web-Services-AWS-with-Multiple-Accounts-and-Roles)" guide explains how to:
  - Add the AWS Multi Account app to OneLogin
@@ -24,8 +22,28 @@ The "[Configuring SAML for Amazon Web Services (AWS) with Multiple Accounts and 
  - Add external roles to give OneLogin access to your AWS accounts
  - Complete your AWS Multi Account configuration in OneLogin
 
+## Quick Start using precompiled binary
+There is a precompiled [onelogin-aws-cli.jar](https://github.com/onelogin/onelogin-aws-cli-assume-role/blob/master/onelogin-aws-assume-role-cli/dist/onelogin-aws-cli.jar) file in the `onelogin-aws-assume-role-cli/dist` folder that you can download and start using this tool immediately.
+
+Use the tool to generate AWS credentials and output them to the terminal.
+
+```sh
+> java -jar onelogin-aws-cli.jar
+```
+
+Or alternately save them to your AWS credentials file to enable faster access from any terminal.
+
+```sh
+> java -jar onelogin-aws-cli.jar --profile profilename
+```
+
+The credentials only last for 1 hour so you can also make it regenerate and update the credentials file by using the `--loop` option.
+
+For [a more detail set of instructions](https://developers.onelogin.com/api-docs/1/samples/aws-cli) see the help guide.
+
 ## Installation
-### Hosting
+
+If you want to include the code in another project, extend it or just build your own binary you can find the source in these locations.
 
 #### Github
 
@@ -104,7 +122,7 @@ BasicSessionCredentials temporaryCredentials = new BasicSessionCredentials(
     assumeRoleWithSAMLResult.getCredentials().getSessionToken()
 );
 
-AmazonS3Client s3 = new AmazonS3Client(temporaryCredentials); 
+AmazonS3Client s3 = new AmazonS3Client(temporaryCredentials);
 ```
 
 ## Usage
