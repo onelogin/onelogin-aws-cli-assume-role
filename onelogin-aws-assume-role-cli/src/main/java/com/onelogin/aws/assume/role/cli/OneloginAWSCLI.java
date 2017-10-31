@@ -28,7 +28,7 @@ import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.DefaultParser;
-import org.apache.commons.cli.Options;
+import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.ParseException;
 import org.apache.oltu.oauth2.common.exception.OAuthProblemException;
 import org.apache.oltu.oauth2.common.exception.OAuthSystemException;
@@ -42,19 +42,26 @@ import com.onelogin.sdk.model.SAMLEndpointResponse;
 
 public class OneloginAWSCLI {
 
-	private static Options options = new Options();
 	private static int time = 45;
 	private static int loop = 1;
 	private static String profileName = null;
 	private static File file = null;
 
-	public static void commandParser(final String[] commandLineArguments) {
+	public static Boolean commandParser(final String[] commandLineArguments) {
 		final CommandLineParser cmd = new DefaultParser();
 		final Options options = buildOptions();
 		CommandLine commandLine;
 		try {
 			commandLine = cmd.parse(options, commandLineArguments);
 			String value;
+
+			if (commandLine.hasOption("help")) {
+				HelpFormatter hf = new HelpFormatter();
+				hf.printHelp("onelogin-aws-cli.jar [options]", options);
+				System.out.println("");
+				return false;
+			}
+
 			if (commandLine.hasOption("time")) {
 				value = commandLine.getOptionValue("time");
 				if (value != null && !value.isEmpty()) {
@@ -84,25 +91,35 @@ public class OneloginAWSCLI {
 			if (commandLine.hasOption("file")) {
 				value = commandLine.getOptionValue("file");
 				if (value != null && !value.isEmpty()) {
-					file = new File(value); 
+					file = new File(value);
 				}
 			}
-		} catch (ParseException parseException) {
+
+			return true;
+		}
+		catch (ParseException parseException) {
 			System.err.println("Encountered exception while parsing" + parseException.getMessage());
+			return false;
 		}
 	}
 
 	public static Options buildOptions() {
 		final Options options = new Options();
+		options.addOption("h", "help", false, "Show the help guide");
 		options.addOption("t", "time", true, "Sleep time between iterations, in minutes  [15-60 min]");
 		options.addOption("l", "loop", true, "Number of iterations");
-		options.addOption("p", "profile", true, "Save Temporal AWS credentials using that profile name");
-		options.addOption("f", "file", true, "Set a custom path to save the AWS credentials. (if not used, default path is used)");
+		options.addOption("p", "profile", true, "Save temporary AWS credentials using that profile name");
+		options.addOption("f", "file", true, "Set a custom path to save the AWS credentials. (if not used, default AWS path is used)");
 		return options;
 	}
 
 	public static void main(String[] commandLineArguments) throws Exception {
-		commandParser(commandLineArguments);
+
+		System.out.println("\nOneLogin AWS Assume Role Tool\n");
+
+		if(!commandParser(commandLineArguments)){
+			return;
+		}
 
 		// OneLogin Java SDK Client
 		Client olClient = new Client();
@@ -216,16 +233,13 @@ public class OneloginAWSCLI {
 					if (System.getProperty("os.name").toLowerCase().indexOf("win") != -1) {
 						action = "set";
 					}
-					System.out.println();
-					System.out.println("Assumed Role User: " + assumedRoleUser.getArn());
-					System.out.println("-----------------------------------------------------------------------");
-					System.out.println("| Success!                                                            |");
-					System.out.println("|                                                                     |");
-					System.out.println("| Temporary AWS Credentials Granted via OneLogin                      |");
-					System.out.println("|                                                                     |");
-					System.out.println("| Copy/Paste to set these as environment variables                    |");
-					System.out.println("-----------------------------------------------------------------------");
-					System.out.println();
+					System.out.println("\n-----------------------------------------------------------------------\n");
+					System.out.println("Success!\n");
+					System.out.println("Assumed Role User: " + assumedRoleUser.getArn() + "\n");
+					System.out.println("Temporary AWS Credentials Granted via OneLogin\n");
+					System.out.println("Copy/Paste to set these as environment variables\n");
+					System.out.println("-----------------------------------------------------------------------\n");
+
 					System.out.println(action + " AWS_SESSION_TOKEN=" + stsCredentials.getSessionToken());
 					System.out.println();
 					System.out.println(action + " AWS_ACCESS_KEY_ID=" + stsCredentials.getAccessKeyId());
@@ -239,16 +253,22 @@ public class OneloginAWSCLI {
 					if (profileName == null) {
 						profileName = "default";
 					}
-					
-					
+
+
 					Map<String, String> properties = new HashMap<String, String>();
 					properties.put(ProfileKeyConstants.AWS_ACCESS_KEY_ID, stsCredentials.getAccessKeyId());
 					properties.put(ProfileKeyConstants.AWS_SECRET_ACCESS_KEY, stsCredentials.getSecretAccessKey());
 					properties.put(ProfileKeyConstants.AWS_SESSION_TOKEN, stsCredentials.getSessionToken());
 					properties.put(ProfileKeyConstants.REGION, awsRegion);
-					
+
 					ProfilesConfigFileWriter.modifyOneProfile(file, profileName, new Profile(profileName, properties, null));
-					System.out.println("Updated profile '" + profileName + "' located at " + file.getAbsolutePath());
+
+					System.out.println("\n-----------------------------------------------------------------------");
+					System.out.println("Success!\n");
+					System.out.println("Temporary AWS Credentials Granted via OneLogin\n");
+					System.out.println("Updated AWS profile '" + profileName + "' located at " + file.getAbsolutePath());
+					System.out.println("This process will regenerate credentials " + (loop - i) + " more times.\n");
+					System.out.println("Press Ctrl + C to exit");
 				}
 			}
 		} finally {
