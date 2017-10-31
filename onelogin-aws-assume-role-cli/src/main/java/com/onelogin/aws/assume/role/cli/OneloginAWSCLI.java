@@ -176,24 +176,21 @@ public class OneloginAWSCLI {
 						List<String> roleData = attributes.get("https://aws.amazon.com/SAML/Attributes/Role");
 						if (roleData.size() > 1) {
 							System.out.println("\nAvailable AWS Roles");
-							System.out
-									.println("-----------------------------------------------------------------------");
+							System.out.println("-----------------------------------------------------------------------");
 							for (int j = 0; j < roleData.size(); j++) {
 								String[] roleInfo = roleData.get(j).split(":");
 								String accountId = roleInfo[4];
 								String roleName = roleInfo[5].replace("role/", "");
 								System.out.println(" " + j + " | " + roleName + " (Account " + accountId + ")");
 							}
-							System.out
-									.println("-----------------------------------------------------------------------");
+							System.out.println("-----------------------------------------------------------------------");
 							System.out.print("Select the desired Role [0-" + (roleData.size() - 1) + "]: ");
 							Integer roleSelection = Integer.valueOf(scanner.next());
 							selectedRole = roleData.get(roleSelection);
 						} else if (roleData.size() == 1) {
 							selectedRole = roleData.get(0);
 						} else {
-							System.out.print(
-									"SAMLResponse from Identity Provider does not contain available AWS Role for this user");
+							System.out.print("SAMLResponse from Identity Provider does not contain available AWS Role for this user");
 						}
 
 						if (!selectedRole.isEmpty()) {
