@@ -331,6 +331,9 @@ public class OneloginAWSCLI {
 					System.out.print("Enter the OTP Token for " + deviceSelection.getType() + ": ");
 					otpToken = scanner.next();
 					stateToken = mfa.getStateToken();
+					mfaVerifyInfo = new HashMap<String, String>();
+					mfaVerifyInfo.put("otpToken", otpToken);
+					mfaVerifyInfo.put("stateToken", stateToken);
 				} else {
 					otpToken = mfaVerifyInfo.get("otpToken");
 					stateToken = mfaVerifyInfo.get("stateToken");
@@ -342,6 +345,7 @@ public class OneloginAWSCLI {
 					otpToken = scanner.next();
 					samlEndpointResponseAfterVerify = olClient.getSAMLAssertionVerifying(appId,
 							deviceIdStr, stateToken, otpToken, null);
+					mfaVerifyInfo.put("otpToken", otpToken);
 				}
 				samlResponse = samlEndpointResponseAfterVerify.getSAMLResponse();
 			} else {
