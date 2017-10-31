@@ -264,8 +264,8 @@ public class OneloginAWSCLI {
 					System.out.println("Success!\n");
 					System.out.println("Temporary AWS Credentials Granted via OneLogin\n");
 					System.out.println("Updated AWS profile '" + profileName + "' located at " + file.getAbsolutePath());
-					if (loop > i) {
-						System.out.println("This process will regenerate credentials " + (loop - i) + " more times.\n");
+					if (loop > (i+1)) {
+						System.out.println("This process will regenerate credentials " + (loop - (i+1)) + " more times.\n");
 						System.out.println("Press Ctrl + C to exit");
 					}
 				}
