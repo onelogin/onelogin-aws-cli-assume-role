@@ -245,7 +245,6 @@ public class OneloginAWSCLI {
 					properties.put(ProfileKeyConstants.AWS_ACCESS_KEY_ID, stsCredentials.getAccessKeyId());
 					properties.put(ProfileKeyConstants.AWS_SECRET_ACCESS_KEY, stsCredentials.getSecretAccessKey());
 					properties.put(ProfileKeyConstants.AWS_SESSION_TOKEN, stsCredentials.getSessionToken());
-					properties.put(ProfileKeyConstants.ROLE_ARN, assumedRoleUser.getArn());
 					properties.put(ProfileKeyConstants.REGION, awsRegion);
 					
 					ProfilesConfigFileWriter.modifyOneProfile(file, profileName, new Profile(profileName, properties, null));

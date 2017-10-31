@@ -126,7 +126,14 @@ You can re-generate the jar by executing at the onelogin-aws-assume-role-cli fol
 mvn package
 ```
 
-### JSP 
+You can extend CLI functionality by using arguments. There are 4:
+
+* loop Number of iterations (default value: 1)
+* time Sleep time between iterations, in minutes (default value: 45) [Must be between 15 and 60]
+* profile Save Temporal AWS credentials using that profile name (If not used, data is prompted instead saved in file)
+* file Set a custom path to save the AWS credentials. (if not used, the default path is used)
+
+### JSP
 
 If you want to deploy the web example, at the Package Explorer, select the onelogin-aws-assume-role-jsp, 2nd bottom of the mouse and Run As > Run Server
 Select a [Tomcat Server](http://crunchify.com/step-by-step-guide-to-setup-and-install-apache-tomcat-server-in-eclipse-development-environment-ide/) in order to deploy the server.
