@@ -93,7 +93,7 @@ Both projects uses a settings file, where [OneLogin SDK properties](https://gith
 * *onelogin.sdk.properties* used by onelogin-java-sdk. That file contains 3 settings parameters:
   * onelogin.sdk.client_id  Onelogin OAuth2 client ID
   * onelogin.sdk.client_secret  Onelogin OAuth2 client secret
-  * onelogin.sdk.instance  Indicates where the instance is hosted. Possible values: 'us' or 'eu'.
+  * onelogin.sdk.region  Indicates where the region is hosted. Possible values: 'us' or 'eu'.
 
 ### How the process works
 
