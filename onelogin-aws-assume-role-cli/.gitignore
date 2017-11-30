@@ -8,3 +8,4 @@ target
 src/main/resources/*.properties
 */out
 .DS_Store
+dist

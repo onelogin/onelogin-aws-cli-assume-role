@@ -7,3 +7,4 @@ target
 .project
 *.DS_STore
 *.vscode
+dist

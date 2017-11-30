@@ -1,18 +1,22 @@
 package com.onelogin.aws.assume.role.cli;
 
-import java.util.concurrent.TimeUnit;
-import java.net.URISyntaxException;
+import java.io.File;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
-import java.io.File;
+import java.util.concurrent.TimeUnit;
+
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
 
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.profile.ProfilesConfigFileWriter;
-import com.amazonaws.auth.profile.internal.BasicProfile;
 import com.amazonaws.auth.profile.internal.Profile;
 import com.amazonaws.auth.profile.internal.ProfileKeyConstants;
 import com.amazonaws.profile.path.AwsProfileFileLocationProvider;
@@ -23,16 +27,6 @@ import com.amazonaws.services.securitytoken.model.AssumeRoleWithSAMLRequest;
 import com.amazonaws.services.securitytoken.model.AssumeRoleWithSAMLResult;
 import com.amazonaws.services.securitytoken.model.AssumedRoleUser;
 import com.amazonaws.services.securitytoken.model.Credentials;
-
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.CommandLineParser;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.DefaultParser;
-import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.ParseException;
-import org.apache.oltu.oauth2.common.exception.OAuthProblemException;
-import org.apache.oltu.oauth2.common.exception.OAuthSystemException;
-
 import com.onelogin.saml2.authn.SamlResponse;
 import com.onelogin.saml2.http.HttpRequest;
 import com.onelogin.sdk.conn.Client;
@@ -46,6 +40,10 @@ public class OneloginAWSCLI {
 	private static int loop = 1;
 	private static String profileName = null;
 	private static File file = null;
+	private static String oneloginUsernameOrEmail = null;
+	private static String appId = null;
+	private static String oneloginDomain = null;
+	private static String awsRegion = null;
 
 	public static Boolean commandParser(final String[] commandLineArguments) {
 		final CommandLineParser cmd = new DefaultParser();
@@ -95,6 +93,34 @@ public class OneloginAWSCLI {
 				}
 			}
 
+			if (commandLine.hasOption("username")) {
+				value = commandLine.getOptionValue("username");
+				if (value != null && !value.isEmpty()) {
+					oneloginUsernameOrEmail = value;
+				}
+			}
+
+			if (commandLine.hasOption("subdomain")) {
+				value = commandLine.getOptionValue("subdomain");
+				if (value != null && !value.isEmpty()) {
+					oneloginDomain = value;
+				}
+			}
+
+			if (commandLine.hasOption("appid")) {
+				value = commandLine.getOptionValue("appid");
+				if (value != null && !value.isEmpty()) {
+					appId = value;
+				}
+			}
+
+			if (commandLine.hasOption("region")) {
+				value = commandLine.getOptionValue("region");
+				if (value != null && !value.isEmpty()) {
+					awsRegion = value;
+				}
+			}
+
 			return true;
 		}
 		catch (ParseException parseException) {
@@ -110,6 +136,11 @@ public class OneloginAWSCLI {
 		options.addOption("l", "loop", true, "Number of iterations");
 		options.addOption("p", "profile", true, "Save temporary AWS credentials using that profile name");
 		options.addOption("f", "file", true, "Set a custom path to save the AWS credentials. (if not used, default AWS path is used)");
+		options.addOption("r", "region", true, "Set the AWS region.");
+		options.addOption("a", "appid", true, "Set AWS App ID.");
+		options.addOption("d", "subdomain", true, "Onelogin Instance Sub Domain.");
+		options.addOption("u", "username", true, "Onelogin username.");
+
 		return options;
 	}
 
@@ -126,12 +157,8 @@ public class OneloginAWSCLI {
 		olClient.getAccessToken();
 		Scanner scanner = new Scanner(System.in);
 		try {
-			String oneloginUsernameOrEmail = null;
 			String oneloginPassword = null;
-			String appId = null;
-			String oneloginDomain = null;
 			String samlResponse;
-			String awsRegion = null;
 
 			Map<String, String> mfaVerifyInfo = null;
 			Map<String, Object> result;
@@ -144,7 +171,12 @@ public class OneloginAWSCLI {
 				if (i == 0) {
 					// Capture OneLogin Account Details
 					System.out.print("OneLogin Username: ");
-					oneloginUsernameOrEmail = scanner.next();
+					if (oneloginUsernameOrEmail == null) {
+						oneloginUsernameOrEmail = scanner.next();
+					}else{
+						System.out.println(oneloginUsernameOrEmail);
+					}
+
 					System.out.print("OneLogin Password: ");
 					try {
 						oneloginPassword = String.valueOf(System.console().readPassword());
@@ -152,9 +184,18 @@ public class OneloginAWSCLI {
 						oneloginPassword = scanner.next();
 					}
 					System.out.print("AWS App ID: ");
-					appId = scanner.next();
+					if (appId == null) {
+						appId = scanner.next();
+					}else {
+							System.out.println(appId);
+					}
+
 					System.out.print("Onelogin Instance Sub Domain: ");
-					oneloginDomain = scanner.next();
+					if (oneloginDomain == null) {
+						oneloginDomain = scanner.next();
+					} else {
+						System.out.println(oneloginDomain);
+					}
 				} else {
 					TimeUnit.MINUTES.sleep(time);
 				}
@@ -206,10 +247,14 @@ public class OneloginAWSCLI {
 
 				if (i == 0) {
 					// AWS REGION
-					System.out.print("AWS Region (" + defaultAWSRegion + "): ");
-					awsRegion = scanner.next();
-					if (awsRegion.isEmpty() || awsRegion.equals("-")) {
-						awsRegion = defaultAWSRegion;
+					if (awsRegion == null) {
+						System.out.print("AWS Region (" + defaultAWSRegion + "): ");
+						awsRegion = scanner.next();
+						if (awsRegion.isEmpty() || awsRegion.equals("-")) {
+							awsRegion = defaultAWSRegion;
+						}
+					}else {
+						System.out.print("AWS Region: " + awsRegion);
 					}
 				}
 
@@ -227,7 +272,7 @@ public class OneloginAWSCLI {
 
 				if (profileName == null && file == null) {
 					String action = "export";
-					if (System.getProperty("os.name").toLowerCase().indexOf("win") != -1) {
+					if (System.getProperty("os.name").toLowerCase().contains("win")) {
 						action = "set";
 					}
 					System.out.println("\n-----------------------------------------------------------------------\n");
@@ -339,7 +384,7 @@ public class OneloginAWSCLI {
 				}
 				SAMLEndpointResponse samlEndpointResponseAfterVerify = olClient.getSAMLAssertionVerifying(appId,
 						deviceIdStr, stateToken, otpToken, null);
-				while (olClient.getErrorDescription() == "Failed authentication with this factor") {
+				while (olClient.getErrorDescription() != null && olClient.getErrorDescription().equals("Failed authentication with this factor")) {
 					System.out.print("The OTP Token was invalid, please introduce a new one: ");
 					otpToken = scanner.next();
 					samlEndpointResponseAfterVerify = olClient.getSAMLAssertionVerifying(appId,
@@ -357,9 +402,7 @@ public class OneloginAWSCLI {
 	}
 
 	public static Boolean checkDeviceExists(List<Device> devices, Long deviceId) {
-		Device device = null;
-		for (int i = 0; i < devices.size(); i++) {
-			device = devices.get(i);
+		for (Device device : devices) {
 			if (device.getID() == deviceId) {
 				return true;
 			}
