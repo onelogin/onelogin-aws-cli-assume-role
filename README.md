@@ -125,6 +125,14 @@ BasicSessionCredentials temporaryCredentials = new BasicSessionCredentials(
 AmazonS3Client s3 = new AmazonS3Client(temporaryCredentials);
 ```
 
+_Note: If you're bored typing your
+username (`--onelogin-username`),
+App ID (`--onelogin-app-id`),
+subdomain (`--onelogin-subdomain`) or
+AWS region (`--aws-region`)
+every time, you can specify these parameters as command-line arguments and
+the tool won't ask for them any more._
+
 ## Usage
 
 ## Working with the github repository code and Eclipse.
