@@ -1,17 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
+
   <groupId>com.onelogin</groupId>
-  <artifactId>onelogin-aws-assume-role</artifactId>
-  <version>1.0.0</version>
-  <packaging>pom</packaging>
-  <name>onelogin-aws-assume-role</name>
-  <description>Onelogin AWS Assume Role (Multi Account).</description>
-  <url>https://github.com/onelogin/onelogin-aws-cli-assume-role</url>
-  <modules>
-    <module>onelogin-aws-assume-role-cli</module>
-    <module>onelogin-aws-assume-role-jsp</module>
-  </modules>
+  <artifactId>onelogin-java-sdk</artifactId>
+  <version>1.2.0</version>
+  <packaging>jar</packaging>
+
+  <name>${project.groupId}:${project.artifactId}</name>
+  <description>Onelogin Java SDK to interact with Onelogin's API.</description>
+  <url>https://github.com/onelogin/onelogin-java-sdk</url>
+
   <distributionManagement>
     <repository>
       <id>sonatype-nexus-staging</id>
@@ -26,35 +25,112 @@
   </distributionManagement>
 
   <scm>
-    <connection>scm:git:git@github.com:onelogin/onelogin-aws-cli-assume-role.git</connection>
-    <developerConnection>scm:git:git@github.com:onelogin/onelogin-aws-cli-assume-role.git</developerConnection>
-    <url>https://github.com/onelogin/onelogin-aws-cli-assume-role</url>
-    <tag>HEAD</tag>
+    <connection>scm:git:git@github.com:onelogin/onelogin-java-sdk.git</connection>
+      <developerConnection>scm:git:git@github.com:onelogin/onelogin-java-sdk.git</developerConnection>
+      <url>https://github.com/onelogin/onelogin-java-sdk</url>
+      <tag>1.2.0</tag>
   </scm>
+
+  <licenses>
+    <license>
+    <name>MIT License</name>
+        <url>https://opensource.org/licenses/MIT</url>
+          <distribution>repo</distribution>
+    </license>
+  </licenses>
+
   <developers>
     <developer>
       <name>Sixto Martín García</name>
       <url>https://github.com/pitbulk</url>
       <organization>OneLogin</organization>
     </developer>
-    <developer>
-      <name>Rich Chetwynd</name>
-      <url>https://github.com/richet</url>
-      <organization>OneLogin</organization>
-    </developer>
   </developers>
-  <licenses>
-    <license>
-      <name>MIT License</name>
-      <url>https://opensource.org/licenses/MIT</url>
-      <distribution>repo</distribution>
-    </license>
-  </licenses>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <oltu.version>1.0.2</oltu.version>
+    <servlet-api-version>2.5</servlet-api-version>
+  </properties>
+
+  <dependencies>
+    <!-- for test -->
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.12</version>
+      <scope>test</scope>
+    </dependency>
+    <!-- for log -->
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+      <version>1.7.25</version>
+    </dependency>
+    <dependency>
+      <groupId>ch.qos.logback</groupId>
+      <artifactId>logback-classic</artifactId>
+      <version>1.2.0</version>
+    </dependency>
+    <!-- date and time library for Java -->
+    <dependency>
+      <groupId>joda-time</groupId>
+      <artifactId>joda-time</artifactId>
+      <version>2.9.4</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.oltu.oauth2</groupId>
+      <artifactId>org.apache.oltu.oauth2.common</artifactId>
+      <version>${oltu.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.json</groupId>
+          <artifactId>json</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>org.json</groupId>
+      <artifactId>json</artifactId>
+      <version>20140107</version>
+    </dependency>    
+    <dependency>
+      <groupId>org.apache.oltu.oauth2</groupId>
+      <artifactId>org.apache.oltu.oauth2.client</artifactId>
+      <version>${oltu.version}</version>
+    </dependency>
+    <dependency>
+    <groupId>javax.servlet</groupId>
+    <artifactId>servlet-api</artifactId>
+    <version>${servlet-api-version}</version>
+    <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.httpcomponents</groupId>
+      <artifactId>httpclient</artifactId>
+      <version>4.5.3</version>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.7.0</version>
+        <configuration>
+          <source>1.7</source>
+          <target>1.7</target>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build> 
+  
   <profiles>
     <profile>
       <id>release</id>
       <build>
-        <plugins>
+       <plugins>
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-source-plugin</artifactId>
@@ -62,34 +138,34 @@
             <executions>
               <execution>
                 <id>attach-sources</id>
-                <goals>
-                  <goal>jar-no-fork</goal>
-                </goals>
+                  <goals>
+                    <goal>jar-no-fork</goal>
+                  </goals>
               </execution>
             </executions>
           </plugin>
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-javadoc-plugin</artifactId>
-            <version>2.9.1</version>
-            <configuration>
-              <additionalparam>-Xdoclint:none</additionalparam>
-            </configuration>
-            <executions>
-              <execution>
-                <id>attach-javadocs</id>
-                <goals>
-                  <goal>jar</goal>
-                </goals>
-              </execution>
-            </executions>
-          </plugin>
+              <artifactId>maven-javadoc-plugin</artifactId>
+              <version>2.9.1</version>
+              <configuration>
+                <additionalparam>-Xdoclint:none</additionalparam>
+              </configuration>
+              <executions>
+                <execution>
+                  <id>attach-javadocs</id>
+                  <goals>
+                    <goal>jar</goal>
+                  </goals>
+                </execution>
+              </executions>
+            </plugin>
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-gpg-plugin</artifactId>
             <version>1.5</version>
-            <executions>
-              <execution>
+              <executions>
+                <execution>
                 <id>sign-artifacts</id>
                 <phase>verify</phase>
                 <goals>
@@ -102,5 +178,4 @@
       </build>
     </profile>
   </profiles>
-
 </project>
