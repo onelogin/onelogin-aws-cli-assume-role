@@ -31,6 +31,7 @@ if (!attributes.containsKey("https://aws.amazon.com/SAML/Attributes/Role")) {
 } else {
 	String selectedRole;
 	List<String> roleData = attributes.get("https://aws.amazon.com/SAML/Attributes/Role");
+	if (roleData.size() > 1) {
 %>
 	<form action="credentials.jsp" method="POST">
 		<label>Available Roles...</label>
@@ -52,8 +53,12 @@ if (!attributes.containsKey("https://aws.amazon.com/SAML/Attributes/Role")) {
 		<input type="submit" value="Get AWS Credentials">
 	</form>
 <%
+	} else {
+%>
+	<p>SAMLResponse from Identity Provider does not contain available AWS Role for this user</p>
+<%
+	}
 }
-
 %>
 
 </body>

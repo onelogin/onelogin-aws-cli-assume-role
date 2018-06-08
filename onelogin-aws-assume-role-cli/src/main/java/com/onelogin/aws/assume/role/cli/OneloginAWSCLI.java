@@ -44,6 +44,7 @@ public class OneloginAWSCLI {
 	private static String appId = null;
 	private static String oneloginDomain = null;
 	private static String awsRegion = null;
+	private static String ip = null;
 
 	public static Boolean commandParser(final String[] commandLineArguments) {
 		final CommandLineParser cmd = new DefaultParser();
@@ -121,6 +122,13 @@ public class OneloginAWSCLI {
 				}
 			}
 
+			if (commandLine.hasOption("ip")) {
+				value = commandLine.getOptionValue("ip");
+				if (value != null && !value.isEmpty()) {
+					ip = value;
+				}
+			}
+
 			return true;
 		}
 		catch (ParseException parseException) {
@@ -140,7 +148,8 @@ public class OneloginAWSCLI {
 		options.addOption("a", "appid", true, "Set AWS App ID.");
 		options.addOption("d", "subdomain", true, "Onelogin Instance Sub Domain.");
 		options.addOption("u", "username", true, "Onelogin username.");
-
+		options.addOption("i", "ip", true, "Set the IP Address to bypass MFA if the IP was whitelisted");
+		
 		return options;
 	}
 
@@ -196,12 +205,21 @@ public class OneloginAWSCLI {
 					} else {
 						System.out.println(oneloginDomain);
 					}
+					System.out.print("IP Address");
+					if (ip == null || ip.isEmpty()) {
+						ip = scanner.nextLine();
+						if (ip == null || ip.isEmpty()) {
+							ip = null;
+						}
+					} else {
+						System.out.println(ip);
+					}
 				} else {
 					TimeUnit.MINUTES.sleep(time);
 				}
 
 				result = getSamlResponse(olClient, scanner, oneloginUsernameOrEmail, oneloginPassword, appId,
-						oneloginDomain, mfaVerifyInfo);
+						oneloginDomain, mfaVerifyInfo, ip);
 				mfaVerifyInfo = (Map<String, String>) result.get("mfaVerifyInfo");
 				samlResponse = (String) result.get("samlResponse");
 
@@ -212,6 +230,7 @@ public class OneloginAWSCLI {
 					HashMap<String, List<String>> attributes = samlResponseObj.getAttributes();
 					if (!attributes.containsKey("https://aws.amazon.com/SAML/Attributes/Role")) {
 						System.out.print("SAMLResponse from Identity Provider does not contain AWS Role info");
+						System.exit(0);
 					} else {
 						String selectedRole = "";
 						List<String> roleData = attributes.get("https://aws.amazon.com/SAML/Attributes/Role");
@@ -232,6 +251,7 @@ public class OneloginAWSCLI {
 							selectedRole = roleData.get(0);
 						} else {
 							System.out.print("SAMLResponse from Identity Provider does not contain available AWS Role for this user");
+							System.exit(0);
 						}
 
 						if (!selectedRole.isEmpty()) {
@@ -296,7 +316,6 @@ public class OneloginAWSCLI {
 						profileName = "default";
 					}
 
-
 					Map<String, String> properties = new HashMap<String, String>();
 					properties.put(ProfileKeyConstants.AWS_ACCESS_KEY_ID, stsCredentials.getAccessKeyId());
 					properties.put(ProfileKeyConstants.AWS_SECRET_ACCESS_KEY, stsCredentials.getSecretAccessKey());
@@ -321,7 +340,7 @@ public class OneloginAWSCLI {
 	}
 
 	public static Map<String, Object> getSamlResponse(Client olClient, Scanner scanner, String oneloginUsernameOrEmail,
-			String oneloginPassword, String appId, String oneloginDomain, Map<String, String> mfaVerifyInfo)
+			String oneloginPassword, String appId, String oneloginDomain, Map<String, String> mfaVerifyInfo, String ip)
 			throws Exception {
 		String otpToken, stateToken;
 		Device deviceSelection;
@@ -330,12 +349,12 @@ public class OneloginAWSCLI {
 		Map<String, Object> result = new HashMap<String, Object>();
 
 		SAMLEndpointResponse samlEndpointResponse = olClient.getSAMLAssertion(oneloginUsernameOrEmail, oneloginPassword,
-				appId, oneloginDomain);
+				appId, oneloginDomain, ip);
 		String status = samlEndpointResponse.getType();
 		while (status.equals("pending")) {
 			TimeUnit.SECONDS.sleep(30);
 			samlEndpointResponse = olClient.getSAMLAssertion(oneloginUsernameOrEmail, oneloginPassword, appId,
-					oneloginDomain);
+					oneloginDomain, ip);
 			status = samlEndpointResponse.getType();
 		}
 		String samlResponse = null;
@@ -399,6 +418,13 @@ public class OneloginAWSCLI {
 		result.put("samlResponse", samlResponse);
 		result.put("mfaVerifyInfo", mfaVerifyInfo);
 		return result;
+	}
+
+	public static Map<String, Object> getSamlResponse(Client olClient, Scanner scanner, String oneloginUsernameOrEmail,
+			String oneloginPassword, String appId, String oneloginDomain, Map<String, String> mfaVerifyInfo)
+			throws Exception {
+		return getSamlResponse(olClient, scanner, oneloginUsernameOrEmail, oneloginPassword, appId,
+				oneloginDomain, mfaVerifyInfo, null);
 	}
 
 	public static Boolean checkDeviceExists(List<Device> devices, Long deviceId) {
