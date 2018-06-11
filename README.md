@@ -23,6 +23,7 @@ The "[Configuring SAML for Amazon Web Services (AWS) with Multiple Accounts and 
  - Complete your AWS Multi Account configuration in OneLogin
 
 ## Quick Start using precompiled binary
+
 There is a precompiled [onelogin-aws-cli.jar](https://github.com/onelogin/onelogin-aws-cli-assume-role/blob/master/onelogin-aws-assume-role-cli/dist/onelogin-aws-cli.jar) file in the `onelogin-aws-assume-role-cli/dist` folder that you can download and start using this tool immediately (once configured the required [settings](https://github.com/onelogin/onelogin-aws-cli-assume-role#settings))
 
 Use the tool to generate AWS credentials and output them to the terminal.
@@ -62,7 +63,7 @@ aws-cli
   <dependency>
       <groupId>com.onelogin</groupId>
       <artifactId>onelogin-aws-assume-role-cli</artifactId>
-      <version>1.0.0</version>
+      <version>1.1.0</version>
   </dependency>
 ```
 
@@ -71,7 +72,7 @@ aws-jsp
   <dependency>
       <groupId>com.onelogin</groupId>
       <artifactId>onelogin-aws-assume-role-jsp</artifactId>
-      <version>1.0.0</version>
+      <version>1.1.0</version>
   </dependency>
 ```
 
