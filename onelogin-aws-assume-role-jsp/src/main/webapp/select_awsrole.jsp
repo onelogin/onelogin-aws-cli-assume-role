@@ -31,9 +31,21 @@ if (!attributes.containsKey("https://aws.amazon.com/SAML/Attributes/Role")) {
 } else {
 	String selectedRole;
 	List<String> roleData = attributes.get("https://aws.amazon.com/SAML/Attributes/Role");
-	if (roleData.size() > 1) {
+	if (roleData.size() > 0) {
 %>
-	<form action="credentials.jsp" method="POST">
+	<form action="credentials.jsp" method="POST">		
+<%
+	if (roleData.size() == 1) {
+		String roleDataStr = roleData.get(0);
+		String[] roleInfo = roleDataStr.split(":");
+		String accountId = roleInfo[4];
+		String roleName = roleInfo[5].replace("role/", "");
+		String name = roleName + "(Account " + accountId + ")";
+		out.print("<span>Selected Role: " + name + "</span></br>");
+		out.print("<input type=\"hidden\" name=\"aws_role\" value=\"" + roleDataStr + "\"\">");
+	} else {
+
+%>
 		<label>Available Roles...</label>
 		<select name="aws_role">
 <%
@@ -47,10 +59,13 @@ if (!attributes.containsKey("https://aws.amazon.com/SAML/Attributes/Role")) {
 		}
 %>
 		</select><br>
-		<label>(Ex: eu-west-1):</label>
-		<input type="text" name="aws_region">
-		<input type="hidden" name="saml_response" value="<%=samlResponse %>"><br>
-		<input type="submit" value="Get AWS Credentials">
+<%
+	}
+%>
+      <label>AWS Region (Ex: us-east-1): </label>
+	  <input type="text" name="aws_region">
+	  <input type="hidden" name="saml_response" value="<%=samlResponse %>"><br>
+	  <input type="submit" value="Get AWS Credentials">
 	</form>
 <%
 	} else {

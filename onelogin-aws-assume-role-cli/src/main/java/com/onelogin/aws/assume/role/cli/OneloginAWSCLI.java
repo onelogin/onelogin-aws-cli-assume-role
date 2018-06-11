@@ -205,14 +205,16 @@ public class OneloginAWSCLI {
 					} else {
 						System.out.println(oneloginDomain);
 					}
-					System.out.print("IP Address");
+					System.out.print("IP Address: ");
 					if (ip == null || ip.isEmpty()) {
+						scanner.skip("\n");
 						ip = scanner.nextLine();
-						if (ip == null || ip.isEmpty()) {
-							ip = null;
-						}
+						ip = ip.replaceAll("\\s+","");
 					} else {
 						System.out.println(ip);
+					}
+					if (ip.isEmpty() || ip.equals("\n")) {
+						ip = null;
 					}
 				} else {
 					TimeUnit.MINUTES.sleep(time);
@@ -234,7 +236,13 @@ public class OneloginAWSCLI {
 					} else {
 						String selectedRole = "";
 						List<String> roleData = attributes.get("https://aws.amazon.com/SAML/Attributes/Role");
-						if (roleData.size() > 1) {
+						if (roleData.size() == 1) {
+							String[] roleInfo = roleData.get(0).split(":");
+							String accountId = roleInfo[4];
+							String roleName = roleInfo[5].replace("role/", "");
+							System.out.println("Role selected: " + roleName + " (Account " + accountId + ")");
+							selectedRole = roleData.get(0);
+						} else if (roleData.size() > 1) {
 							System.out.println("\nAvailable AWS Roles");
 							System.out.println("-----------------------------------------------------------------------");
 							for (int j = 0; j < roleData.size(); j++) {
@@ -247,8 +255,6 @@ public class OneloginAWSCLI {
 							System.out.print("Select the desired Role [0-" + (roleData.size() - 1) + "]: ");
 							Integer roleSelection = Integer.valueOf(scanner.next());
 							selectedRole = roleData.get(roleSelection);
-						} else if (roleData.size() == 1) {
-							selectedRole = roleData.get(0);
 						} else {
 							System.out.print("SAMLResponse from Identity Provider does not contain available AWS Role for this user");
 							System.exit(0);
@@ -378,16 +384,22 @@ public class OneloginAWSCLI {
 				}
 
 				if (mfaVerifyInfo == null) {
-
 					System.out.println("-----------------------------------------------------------------------");
 					Device device;
-					for (int i = 0; i < devices.size(); i++) {
-						device = devices.get(i);
-						System.out.println(" " + i + " | " + device.getType());
+					Integer deviceInput;
+					if (devices.size() == 1) {
+						deviceInput = 0;
+					} else {
+						for (int i = 0; i < devices.size(); i++) {
+							device = devices.get(i);
+							System.out.println(" " + i + " | " + device.getType());
+						}
+						System.out.println("-----------------------------------------------------------------------");
+						System.out.print("\nSelect the desired MFA Device [0-" + (devices.size() - 1) + "]: ");
+						deviceInput = Integer.valueOf(scanner.next());
 					}
-					System.out.println("-----------------------------------------------------------------------");
-					System.out.print("\nSelect the desired MFA Device [0-" + (devices.size() - 1) + "]: ");
-					deviceSelection = devices.get(Integer.valueOf(scanner.next()));
+
+					deviceSelection = devices.get(deviceInput);
 					deviceId = deviceSelection.getID();
 					deviceIdStr = deviceId.toString();
 
@@ -401,22 +413,15 @@ public class OneloginAWSCLI {
 					otpToken = mfaVerifyInfo.get("otpToken");
 					stateToken = mfaVerifyInfo.get("stateToken");
 				}
-				SAMLEndpointResponse samlEndpointResponseAfterVerify = olClient.getSAMLAssertionVerifying(appId,
-						deviceIdStr, stateToken, otpToken, null);
-				while (olClient.getErrorDescription() != null && olClient.getErrorDescription().equals("Failed authentication with this factor")) {
-					System.out.print("The OTP Token was invalid, please introduce a new one: ");
-					otpToken = scanner.next();
-					samlEndpointResponseAfterVerify = olClient.getSAMLAssertionVerifying(appId,
-							deviceIdStr, stateToken, otpToken, null);
-					mfaVerifyInfo.put("otpToken", otpToken);
-				}
-				samlResponse = samlEndpointResponseAfterVerify.getSAMLResponse();
+				result = verifyToken(olClient, scanner, appId,
+						deviceIdStr, stateToken, otpToken, mfaVerifyInfo);
+				
 			} else {
 				samlResponse = samlEndpointResponse.getSAMLResponse();
+				result.put("samlResponse", samlResponse);
+				result.put("mfaVerifyInfo", mfaVerifyInfo);
 			}
 		}
-		result.put("samlResponse", samlResponse);
-		result.put("mfaVerifyInfo", mfaVerifyInfo);
 		return result;
 	}
 
@@ -434,6 +439,25 @@ public class OneloginAWSCLI {
 			}
 		}
 		return false;
+	}
+	
+	public static Map<String, Object> verifyToken(Client olClient, Scanner scanner, String appId,
+			String deviceIdStr, String stateToken, String otpToken, Map<String, String> mfaVerifyInfo) {
+		Map<String, Object> result = new HashMap<String, Object>();
+		try {
+			SAMLEndpointResponse samlEndpointResponseAfterVerify = olClient.getSAMLAssertionVerifying(appId,
+				deviceIdStr, stateToken, otpToken, null);
+			mfaVerifyInfo.put("otpToken", otpToken);
+			String samlResponse = samlEndpointResponseAfterVerify.getSAMLResponse();	
+			result.put("samlResponse", samlResponse);
+			result.put("mfaVerifyInfo", mfaVerifyInfo);
+		} catch (Exception OAuthProblemException){
+			System.out.print("The OTP Token was invalid, please introduce a new one: ");
+			otpToken = scanner.next();
+			result = verifyToken(olClient, scanner, appId,
+					deviceIdStr, stateToken, otpToken, mfaVerifyInfo);		
+		}
+		return result;
 	}
 
 }

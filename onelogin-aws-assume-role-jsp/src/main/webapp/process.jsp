@@ -26,7 +26,7 @@ String appId = request.getParameter("app_id");
 String oneloginDomain = request.getParameter("onelogin_domain");
 String ip = request.getParameter("ip");
 
-if(ip.isEmpty()) {
+if(ip != null && ip.isEmpty()) {
 	ip = null;
 }
 
@@ -48,17 +48,28 @@ if (status.equals("success")) {
 		MFA mfa = samlEndpointResponse.getMFA();
 		List<Device> devices = mfa.getDevices();		
 %>
-<form action="process_mfa.jsp">
-<label>Device</label>
-<select name="device">
+<form action="process_mfa.jsp" method="POST">
+<label>Device: </label>
 <%
-	Device device;
-	for (int i=0; i < devices.size(); i++) {
-		device = devices.get(i);
-		out.print("<option value=\""+device.getID()+"\">"+device.getType()+"</option>");
-	}
+
+ Device device;
+ if (devices.size() == 1) {
+		device = devices.get(0);
+		out.print("<span style=\"font-style:italic;\">" + device.getType() + "</span><br>");
+		out.print("<input type=\"hidden\" name=\"device\" value=\"" + device.getID() + "\"\">");	 
+ } else {
 %>
-</select><br/>
+	<select name="device">
+	<%
+		for (int i=0; i < devices.size(); i++) {
+			device = devices.get(i);
+			out.print("<option value=\""+device.getID()+"\">"+device.getType()+"</option>");
+		}
+	%>
+	</select><br/>
+<%
+ }
+%>
 <label>OTP Token</label><input type="text" name="otp_token" /><br/>  
 <input type="hidden" name="state_token" value="<%=mfa.getStateToken() %>">
 <input type="hidden" name="app_id" value="<%=appId %>">

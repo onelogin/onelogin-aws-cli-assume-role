@@ -29,23 +29,39 @@ String otpToken = request.getParameter("otp_token");
 String deviceId = request.getParameter("device");
 
 String samlResponse = null;
-SAMLEndpointResponse samlEndpointResponseAfterVerify = olClient.getSAMLAssertionVerifying(appId, deviceId, stateToken, otpToken, null);
+SAMLEndpointResponse samlEndpointResponseAfterVerify = null;
 
-String status = samlEndpointResponseAfterVerify.getType();
-while(status.equals("pending")) {
-	TimeUnit.SECONDS.sleep(30);
+try {
 	samlEndpointResponseAfterVerify = olClient.getSAMLAssertionVerifying(appId, deviceId, stateToken, otpToken, null);
-	status = samlEndpointResponseAfterVerify.getType();
-}
-if (status.equals("success")) {
-	samlResponse = samlEndpointResponseAfterVerify.getSAMLResponse();
+
+	String status = samlEndpointResponseAfterVerify.getType();
+	while(status.equals("pending")) {
+		TimeUnit.SECONDS.sleep(30);
+		samlEndpointResponseAfterVerify = olClient.getSAMLAssertionVerifying(appId, deviceId, stateToken, otpToken, null);
+		status = samlEndpointResponseAfterVerify.getType();
+	}
+	if (status.equals("success")) {
+		samlResponse = samlEndpointResponseAfterVerify.getSAMLResponse();
+	%>
+		<p>We retrieved that SAMLResponse from OneLogin that will be used in order to assume an AWS Role</p>
+		<form action="select_awsrole.jsp" method="POST">
+		<label>SAMLResponse</label><br>
+		<textarea rows="10" cols="50" name="saml_response"><%=samlResponse %></textarea><br>
+		<input type="submit" value="Continue">
+		</form>
+	<%
+	}
+} catch (Exception OAuthProblemException){
 %>
-	<p>We retrieved that SAMLResponse from Onelogin that will be used in order to assume an AWS Role</p>
-	<form action="select_awsrole.jsp" method="POST">
-	<label>SAMLResponse</label><br>
-	<textarea rows="10" cols="50" name="saml_response"><%=samlResponse %></textarea><br>
-	<input type="submit" value="Continue">
-	</form>
+
+<p>Authentication failed, introduce again the OTP Token</p> 
+<form action="process_mfa.jsp" method="POST">
+<label>OTP Token</label><input type="text" name="otp_token" /><br/>  
+<input type="hidden" name="state_token" value="<%=stateToken %>">
+<input type="hidden" name="device" value="<%=deviceId %>">
+<input type="hidden" name="app_id" value="<%=appId %>">
+<input type="submit" value="Submit"/>
+</form>
 <%
 }
 %>

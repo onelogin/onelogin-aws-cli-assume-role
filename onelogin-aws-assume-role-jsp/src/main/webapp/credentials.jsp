@@ -7,12 +7,14 @@
 <%@page import="com.amazonaws.auth.BasicAWSCredentials"%>
 <%@page import="com.amazonaws.auth.AWSStaticCredentialsProvider"%>
 <%@page import="com.amazonaws.auth.PropertiesCredentials"%>
+<%@page import="com.amazonaws.regions.Regions"%>
 <%@page import="com.amazonaws.services.securitytoken.AWSSecurityTokenService"%>
 <%@page import="com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder"%>
 <%@page import="com.amazonaws.services.securitytoken.model.AssumedRoleUser"%>
 <%@page import="com.amazonaws.services.securitytoken.model.AssumeRoleWithSAMLResult"%>
 <%@page import="com.amazonaws.services.securitytoken.model.AssumeRoleWithSAMLRequest"%>
 <%@page import="com.amazonaws.services.securitytoken.model.Credentials"%>
+
 <%@page language="java" contentType="text/html; charset=UTF-8"
 	pageEncoding="UTF-8"%>
 <!DOCTYPE html>
@@ -28,6 +30,10 @@
 String awsRole = request.getParameter("aws_role");
 String awsRegion = request.getParameter("aws_region");
 String samlResponse = request.getParameter("saml_response");
+
+if (awsRegion.isEmpty() || awsRegion.equals("-")) {
+	awsRegion = Regions.DEFAULT_REGION.getName();
+}
 
 String[] roleData = awsRole.split(","); 
 String roleArn = roleData[0];
