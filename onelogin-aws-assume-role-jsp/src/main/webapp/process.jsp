@@ -24,14 +24,12 @@ String oneloginUsernameOrEmail = request.getParameter("onelogin_username_or_emai
 String oneloginPassword = request.getParameter("onelogin_password");
 String appId = request.getParameter("app_id");
 String oneloginDomain = request.getParameter("onelogin_domain");
-String ip = request.getParameter("ip");
-
-if(ip != null && ip.isEmpty()) {
-	ip = null;
-}
 
 Client olClient = new Client();
 olClient.getAccessToken();
+
+// Get IP from onelogin.sdk.properties file, but we could also read IP from user browser.
+String ip = olClient.getIP();
 
 SAMLEndpointResponse samlEndpointResponse = olClient.getSAMLAssertion(oneloginUsernameOrEmail, oneloginPassword, appId, oneloginDomain, ip);
 

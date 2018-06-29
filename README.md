@@ -95,6 +95,7 @@ Both projects uses a settings file, where [OneLogin SDK properties](https://gith
   * onelogin.sdk.client_id  Onelogin OAuth2 client ID
   * onelogin.sdk.client_secret  Onelogin OAuth2 client secret
   * onelogin.sdk.region  Indicates where the region is hosted. Possible values: 'us' or 'eu'.
+  * onelogin.sdk.ip  Set an ip address value that can later be retrieved with the getIP method and used on the getSAMLAssertion method to bypass MFA protection if that IP was whitelisted on the user's policy.
 
 ### How the process works
 

@@ -30,6 +30,7 @@ import com.amazonaws.services.securitytoken.model.Credentials;
 import com.onelogin.saml2.authn.SamlResponse;
 import com.onelogin.saml2.http.HttpRequest;
 import com.onelogin.sdk.conn.Client;
+import com.onelogin.sdk.util.Settings;
 import com.onelogin.sdk.model.Device;
 import com.onelogin.sdk.model.MFA;
 import com.onelogin.sdk.model.SAMLEndpointResponse;
@@ -122,13 +123,6 @@ public class OneloginAWSCLI {
 				}
 			}
 
-			if (commandLine.hasOption("ip")) {
-				value = commandLine.getOptionValue("ip");
-				if (value != null && !value.isEmpty()) {
-					ip = value;
-				}
-			}
-
 			return true;
 		}
 		catch (ParseException parseException) {
@@ -148,7 +142,6 @@ public class OneloginAWSCLI {
 		options.addOption("a", "appid", true, "Set AWS App ID.");
 		options.addOption("d", "subdomain", true, "Onelogin Instance Sub Domain.");
 		options.addOption("u", "username", true, "Onelogin username.");
-		options.addOption("i", "ip", true, "Set the IP Address to bypass MFA if the IP was whitelisted");
 		
 		return options;
 	}
@@ -162,7 +155,8 @@ public class OneloginAWSCLI {
 		}
 
 		// OneLogin Java SDK Client
-		Client olClient = new Client();
+		Client olClient = new Client();		
+		String ip = olClient.getIP();
 		olClient.getAccessToken();
 		Scanner scanner = new Scanner(System.in);
 		try {
@@ -204,17 +198,6 @@ public class OneloginAWSCLI {
 						oneloginDomain = scanner.next();
 					} else {
 						System.out.println(oneloginDomain);
-					}
-					System.out.print("IP Address: ");
-					if (ip == null || ip.isEmpty()) {
-						scanner.skip("\n");
-						ip = scanner.nextLine();
-						ip = ip.replaceAll("\\s+","");
-					} else {
-						System.out.println(ip);
-					}
-					if (ip.isEmpty() || ip.equals("\n")) {
-						ip = null;
 					}
 				} else {
 					TimeUnit.MINUTES.sleep(time);

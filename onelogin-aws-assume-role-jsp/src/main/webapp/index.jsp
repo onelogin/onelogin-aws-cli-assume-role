@@ -14,7 +14,6 @@
 <label>Onelogin Password</label><input type="password" name="onelogin_password"> <br/>  
 <label>Onelogin App ID</label><input type="text" name="app_id"> <br/>  
 <label>Onelogin Domain</label><input type="text" name="onelogin_domain"/><br/>
-<label>IP Adress</label><input type="text" name="ip"/><br/>
 <input type="submit" value="Submit"/>  
 </form>
 </body>
