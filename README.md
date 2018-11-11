@@ -127,21 +127,6 @@ BasicSessionCredentials temporaryCredentials = new BasicSessionCredentials(
 AmazonS3Client s3 = new AmazonS3Client(temporaryCredentials);
 ```
 
-_Note: If you're bored typing your
-username (`--onelogin-username`),
-App ID (`--onelogin-app-id`),
-subdomain (`--onelogin-subdomain`) or
-AWS region (`--aws-region`)
-every time, you can specify these parameters as command-line arguments and
-the tool won't ask for them any more._
-
-_Note: Specifying your password directly with `--onelogin-password` is bad practice,
-you should use that flag together with password managers, eg. with the OSX Keychain:
-`--onelogin-password $(security find-generic-password -a $USER -s onelogin -w)`,
-so your password won't be saved in you command line history.
-Please note that your password **will** be visible in your process list,
-if you use this flag (as the expanded command line arguments are part of the name of the process)._
-
 ## Usage
 
 ## Working with the github repository code and Eclipse.
@@ -161,12 +146,31 @@ You can re-generate the jar by executing at the onelogin-aws-assume-role-cli fol
 mvn package
 ```
 
-You can extend CLI functionality by using arguments. There are 4:
+You can extend CLI functionality by using arguments. There are several:
 
 * loop Number of iterations (default value: 1)
 * time Sleep time between iterations, in minutes (default value: 45) [Must be between 15 and 60]
 * profile Save Temporal AWS credentials using that profile name (If not used, data is prompted instead saved in file)
 * file Set a custom path to save the AWS credentials. (if not used, the default path is used)
+
+_Note: If you're bored typing your
+username (`--username`),
+App ID (`--appid`),
+subdomain (`--subdomain`) or
+AWS region (`--region`)
+every time, you can specify these parameters as command-line arguments and
+the tool won't ask for them any more._
+
+The selection of the AWS account and Role can be also be done with the --aws-account-id and --aws-role-name parameters.
+
+_Note: Specifying your password directly with `--password` is bad practice,
+you should use that flag together with password managers, eg. with the OSX Keychain:
+`--password $(security find-generic-password -a $USER -s onelogin -w)`,
+so your password won't be saved in you command line history.
+Please note that your password **will** be visible in your process list,
+if you use this flag (as the expanded command line arguments are part of the name of the process)._
+
+For more info execute the --help option.
 
 ### JSP
 

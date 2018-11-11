@@ -1,6 +1,7 @@
 package com.onelogin.aws.assume.role.cli;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -41,10 +42,12 @@ public class OneloginAWSCLI {
 	private static String profileName = null;
 	private static File file = null;
 	private static String oneloginUsernameOrEmail = null;
+	private static String oneloginPassword = null;
 	private static String appId = null;
 	private static String oneloginDomain = null;
 	private static String awsRegion = null;
-	private static String oneloginPassword = null;
+	private static String awsAccountId = null;
+	private static String awsRoleName = null;
 
 	public static Boolean commandParser(final String[] commandLineArguments) {
 		final CommandLineParser cmd = new DefaultParser();
@@ -122,11 +125,30 @@ public class OneloginAWSCLI {
 				}
 			}
 
-			if (commandLine.hasOption("onelogin-password")) {
-				value = commandLine.getOptionValue("onelogin-password");
+			if (commandLine.hasOption("password")) {
+				value = commandLine.getOptionValue("password");
 				if (value != null && !value.isEmpty()) {
 					oneloginPassword = value;
 				}
+			}
+
+			if (commandLine.hasOption("aws-account-id")) {
+				value = commandLine.getOptionValue("aws-account-id");
+				if (value != null && !value.isEmpty()) {
+					awsAccountId = value;
+				}
+			}
+
+			if (commandLine.hasOption("aws-role-name")) {
+				value = commandLine.getOptionValue("aws-role-name");
+				if (value != null && !value.isEmpty()) {
+					awsRoleName = value;
+				}
+			}
+
+			if (((awsAccountId != null && awsAccountId.isEmpty()) && (awsRoleName == null || awsRoleName.isEmpty())) || ((awsRoleName != null && awsRoleName.isEmpty()) && (awsAccountId == null || awsAccountId.isEmpty()))) {
+				System.err.println("--aws-account-id and --aws-role-name need to be set together");
+				return false;
 			}
 
 			return true;
@@ -148,8 +170,10 @@ public class OneloginAWSCLI {
 		options.addOption("a", "appid", true, "Set AWS App ID.");
 		options.addOption("d", "subdomain", true, "OneLogin Instance Sub Domain.");
 		options.addOption("u", "username", true, "OneLogin username.");
-		options.addOption(null, "onelogin-password", true, "OneLogin password.");
-		
+		options.addOption(null, "password", true, "OneLogin password.");
+		options.addOption(null, "aws-account-id", true, "AWS Account ID.");
+		options.addOption(null, "aws-role-name", true, "AWS Role Name.");
+
 		return options;
 	}
 
@@ -236,15 +260,35 @@ public class OneloginAWSCLI {
 						} else if (roleData.size() > 1) {
 							System.out.println("\nAvailable AWS Roles");
 							System.out.println("-----------------------------------------------------------------------");
+							Map<String, Map<String, Integer>> rolesByApp = new HashMap<String,Map<String, Integer>>();
+							Map<String, Integer> val = null;
 							for (int j = 0; j < roleData.size(); j++) {
-								String[] roleInfo = roleData.get(j).split(":");
+								String[] roleInfo = roleData.get(j).split(",")[0].split(":");
 								String accountId = roleInfo[4];
 								String roleName = roleInfo[5].replace("role/", "");
 								System.out.println(" " + j + " | " + roleName + " (Account " + accountId + ")");
+								if (rolesByApp.containsKey(accountId)) {
+									rolesByApp.get(accountId).put(roleName,j);
+								} else {
+									val = new HashMap<String, Integer>();
+									val.put(roleName, j);
+									rolesByApp.put(accountId, val);
+								}
 							}
-							System.out.println("-----------------------------------------------------------------------");
-							System.out.print("Select the desired Role [0-" + (roleData.size() - 1) + "]: ");
-							Integer roleSelection = Integer.valueOf(scanner.next());
+
+							Integer roleSelection = null;
+							if (awsAccountId != null && awsRoleName != null && rolesByApp.containsKey(awsAccountId) && rolesByApp.get(awsAccountId).containsKey(awsRoleName)) {
+								roleSelection = rolesByApp.get(awsAccountId).get(awsRoleName);
+							}
+
+							if (roleSelection == null) {
+								if (awsAccountId != null && !awsAccountId.isEmpty() && awsRoleName != null && !awsRoleName.isEmpty()) {
+									System.out.println("SAMLResponse from Identity Provider does not contain available AWS Role: " + awsAccountId + " for AWS Account: " + awsRoleName);
+								}
+								System.out.println("-----------------------------------------------------------------------");
+								System.out.print("Select the desired Role [0-" + (roleData.size() - 1) + "]: ");
+								roleSelection = getSelection(scanner, roleData.size());
+							}
 							selectedRole = roleData.get(roleSelection);
 						} else {
 							System.out.print("SAMLResponse from Identity Provider does not contain available AWS Role for this user");
@@ -336,6 +380,16 @@ public class OneloginAWSCLI {
 		}
 	}
 
+	public static Integer getSelection(Scanner scanner, int max)
+	{
+		Integer selection = Integer.valueOf(scanner.next());
+		while (selection < 0 || selection >= max) {
+			System.out.println("Wrong number, add a number between 0 - " + (max - 1));
+			selection = Integer.valueOf(scanner.next());
+		}
+		return selection;
+	}
+
 	public static Map<String, Object> getSamlResponse(Client olClient, Scanner scanner, String oneloginUsernameOrEmail,
 			String oneloginPassword, String appId, String oneloginDomain, Map<String, String> mfaVerifyInfo, String ip)
 			throws Exception {
@@ -387,7 +441,7 @@ public class OneloginAWSCLI {
 						}
 						System.out.println("-----------------------------------------------------------------------");
 						System.out.print("\nSelect the desired MFA Device [0-" + (devices.size() - 1) + "]: ");
-						deviceInput = Integer.valueOf(scanner.next());
+						deviceInput = getSelection(scanner, devices.size());
 					}
 
 					deviceSelection = devices.get(deviceInput);
