@@ -24,6 +24,7 @@ import com.amazonaws.profile.path.AwsProfileFileLocationProvider;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder;
+import com.amazonaws.services.securitytoken.model.AWSSecurityTokenServiceException;
 import com.amazonaws.services.securitytoken.model.AssumeRoleWithSAMLRequest;
 import com.amazonaws.services.securitytoken.model.AssumeRoleWithSAMLResult;
 import com.amazonaws.services.securitytoken.model.AssumedRoleUser;
@@ -48,6 +49,7 @@ public class OneloginAWSCLI {
 	private static String awsRegion = null;
 	private static String awsAccountId = null;
 	private static String awsRoleName = null;
+	private static int duration = 3600;
 
 	public static Boolean commandParser(final String[] commandLineArguments) {
 		final CommandLineParser cmd = new DefaultParser();
@@ -146,6 +148,20 @@ public class OneloginAWSCLI {
 				}
 			}
 
+			if (commandLine.hasOption("duration")) {
+				value = commandLine.getOptionValue("duration");
+				if (value != null && !value.isEmpty()) {
+					duration = Integer.parseInt(value);
+				}
+				if (duration < 3600) {
+					duration = 3600;
+				} else if (duration > 43200) {
+					duration = 3600;
+				}
+			} else {
+				duration = 3600;
+			}
+
 			if (((awsAccountId != null && awsAccountId.isEmpty()) && (awsRoleName == null || awsRoleName.isEmpty())) || ((awsRoleName != null && awsRoleName.isEmpty()) && (awsAccountId == null || awsAccountId.isEmpty()))) {
 				System.err.println("--aws-account-id and --aws-role-name need to be set together");
 				return false;
@@ -173,6 +189,7 @@ public class OneloginAWSCLI {
 		options.addOption(null, "password", true, "OneLogin password.");
 		options.addOption(null, "aws-account-id", true, "AWS Account ID.");
 		options.addOption(null, "aws-role-name", true, "AWS Role Name.");
+		options.addOption("z", "duration", true, "Desired AWS Credential Duration");
 
 		return options;
 	}
@@ -190,6 +207,7 @@ public class OneloginAWSCLI {
 		String ip = olClient.getIP();
 		olClient.getAccessToken();
 		Scanner scanner = new Scanner(System.in);
+		int currentDuration = duration;
 		try {
 			String samlResponse;
 
@@ -303,9 +321,6 @@ public class OneloginAWSCLI {
 					}
 				}
 
-				AssumeRoleWithSAMLRequest assumeRoleWithSAMLRequest = new AssumeRoleWithSAMLRequest()
-						.withPrincipalArn(principalArn).withRoleArn(roleArn).withSAMLAssertion(samlResponse);
-
 				if (i == 0) {
 					// AWS REGION
 					if (awsRegion == null) {
@@ -326,8 +341,27 @@ public class OneloginAWSCLI {
 				AWSSecurityTokenService stsClient = stsBuilder.withRegion(awsRegion)
 						.withCredentials(new AWSStaticCredentialsProvider(awsCredentials)).build();
 
-				AssumeRoleWithSAMLResult assumeRoleWithSAMLResult = stsClient
-						.assumeRoleWithSAML(assumeRoleWithSAMLRequest);
+				AssumeRoleWithSAMLRequest assumeRoleWithSAMLRequest = null;
+				AssumeRoleWithSAMLResult assumeRoleWithSAMLResult = null;
+				try {
+					assumeRoleWithSAMLRequest = new AssumeRoleWithSAMLRequest()
+							.withPrincipalArn(principalArn).withRoleArn(roleArn).withSAMLAssertion(samlResponse).withDurationSeconds(currentDuration);
+					assumeRoleWithSAMLResult = stsClient
+							.assumeRoleWithSAML(assumeRoleWithSAMLRequest);
+				} catch (AWSSecurityTokenServiceException e) {
+					if (e.getErrorMessage().contains("'durationSeconds' failed to satisfy constraint") || e.getErrorMessage().contains("DurationSeconds exceeds")) {
+						System.out.print("Introduce a new value, to be used on this Role, for DurationSeconds between 3600 and 43200. Previously was "+ currentDuration + ": ");
+						currentDuration = getDuration(scanner);
+
+						assumeRoleWithSAMLRequest = new AssumeRoleWithSAMLRequest()
+								.withPrincipalArn(principalArn).withRoleArn(roleArn).withSAMLAssertion(samlResponse).withDurationSeconds(currentDuration);
+						assumeRoleWithSAMLResult = stsClient
+								.assumeRoleWithSAML(assumeRoleWithSAMLRequest);
+					} else {
+						throw e;
+					}
+				}
+
 				Credentials stsCredentials = assumeRoleWithSAMLResult.getCredentials();
 				AssumedRoleUser assumedRoleUser = assumeRoleWithSAMLResult.getAssumedRoleUser();
 
@@ -339,7 +373,8 @@ public class OneloginAWSCLI {
 					System.out.println("\n-----------------------------------------------------------------------\n");
 					System.out.println("Success!\n");
 					System.out.println("Assumed Role User: " + assumedRoleUser.getArn() + "\n");
-					System.out.println("Temporary AWS Credentials Granted via OneLogin\n");
+					System.out.println("Temporary AWS Credentials Granted via OneLogin\n ");
+					System.out.println("It will expire at " + stsCredentials.getExpiration());
 					System.out.println("Copy/Paste to set these as environment variables\n");
 					System.out.println("-----------------------------------------------------------------------\n");
 
@@ -468,6 +503,25 @@ public class OneloginAWSCLI {
 			}
 		}
 		return result;
+	}
+
+	public static Integer getDuration(Scanner scanner) {
+		Integer answer = null;
+		String value = null;
+		boolean start = true;
+		while (answer == null || (answer < 3600 || answer > 43200)) {
+			if (!start) {
+				System.out.println("Wrong value, insert a value between 3600 and 43200: ");
+			}
+			start = false;
+			value = scanner.next();
+			try {
+				answer = Integer.valueOf(value);
+			} catch (Exception e) {
+				continue;
+			}
+		}
+		return answer;
 	}
 
 	public static Map<String, Object> getSamlResponse(Client olClient, Scanner scanner, String oneloginUsernameOrEmail,
