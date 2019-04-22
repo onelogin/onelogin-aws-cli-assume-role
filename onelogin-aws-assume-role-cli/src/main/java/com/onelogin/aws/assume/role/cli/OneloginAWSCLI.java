@@ -50,6 +50,9 @@ public class OneloginAWSCLI {
 	private static String awsAccountId = null;
 	private static String awsRoleName = null;
 	private static int duration = 3600;
+	private static String oneloginClientID = null;
+	private static String oneloginClientSecret = null;
+	private static String oneloginRegion = "us";
 
 	public static Boolean commandParser(final String[] commandLineArguments) {
 		final CommandLineParser cmd = new DefaultParser();
@@ -162,11 +165,38 @@ public class OneloginAWSCLI {
 				duration = 3600;
 			}
 
-			if (((awsAccountId != null && awsAccountId.isEmpty()) && (awsRoleName == null || awsRoleName.isEmpty())) || ((awsRoleName != null && awsRoleName.isEmpty()) && (awsAccountId == null || awsAccountId.isEmpty()))) {
+			if (commandLine.hasOption("onelogin-client-id")) {
+				value = commandLine.getOptionValue("onelogin-client-id");
+				if (value != null && !value.isEmpty()) {
+					oneloginClientID = value;
+				}
+			}
+
+			if (commandLine.hasOption("onelogin-client-secret")) {
+				value = commandLine.getOptionValue("onelogin-client-secret");
+				if (value != null && !value.isEmpty()) {
+					oneloginClientSecret = value;
+				}
+			}
+
+			if (commandLine.hasOption("onelogin-region")) {
+				value = commandLine.getOptionValue("onelogin-region");
+				if (value != null && !value.isEmpty()) {
+					oneloginRegion = value;
+				}
+			}
+
+			// VALIDATIONS
+			
+			if (((awsAccountId != null && !awsAccountId.isEmpty()) && (awsRoleName == null || awsRoleName.isEmpty())) || ((awsRoleName != null && !awsRoleName.isEmpty()) && (awsAccountId == null || awsAccountId.isEmpty()))) {
 				System.err.println("--aws-account-id and --aws-role-name need to be set together");
 				return false;
 			}
 
+			if (((oneloginClientID != null && !oneloginClientID.isEmpty()) && (oneloginClientSecret == null || oneloginClientSecret.isEmpty())) || ((oneloginClientSecret != null && !oneloginClientSecret.isEmpty()) && (oneloginClientID == null || oneloginClientID.isEmpty()))) {
+				System.err.println("--onelogin-client-id and --onelogin-client-secret need to be set together");
+				return false;
+			}
 			return true;
 		}
 		catch (ParseException parseException) {
@@ -190,6 +220,9 @@ public class OneloginAWSCLI {
 		options.addOption(null, "aws-account-id", true, "AWS Account ID.");
 		options.addOption(null, "aws-role-name", true, "AWS Role Name.");
 		options.addOption("z", "duration", true, "Desired AWS Credential Duration");
+		options.addOption(null, "onelogin-client-id", true, "A valid OneLogin API client_id");
+		options.addOption(null, "onelogin-client-secret", true, "A valid OneLogin API client_secret");
+		options.addOption(null, "onelogin-region", true, "Onelogin region. us or eu  (Default value: us)");
 
 		return options;
 	}
@@ -203,7 +236,12 @@ public class OneloginAWSCLI {
 		}
 
 		// OneLogin Java SDK Client
-		Client olClient = new Client();		
+		Client olClient;
+		if ((oneloginClientID == null || oneloginClientID.isEmpty()) && (oneloginClientSecret == null || oneloginClientSecret.isEmpty())) {
+			olClient = new Client();
+		} else {
+			olClient = new Client(oneloginClientID, oneloginClientSecret, oneloginRegion);
+		}
 		String ip = olClient.getIP();
 		olClient.getAccessToken();
 		Scanner scanner = new Scanner(System.in);
