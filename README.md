@@ -91,11 +91,13 @@ It works with Java7 and Java8.
 
 Both projects uses a settings file, where [OneLogin SDK properties](https://github.com/onelogin/onelogin-java-sdk#settings) are placed, that can be found at *src/resources* folder:
 
-* *onelogin.sdk.properties* used by onelogin-java-sdk. That file contains 3 settings parameters:
+* *onelogin.sdk.properties* used by onelogin-java-sdk. That file contains 4 settings parameters:
   * onelogin.sdk.client_id  Onelogin OAuth2 client ID
   * onelogin.sdk.client_secret  Onelogin OAuth2 client secret
-  * onelogin.sdk.region  Indicates where the region is hosted. Possible values: 'us' or 'eu'.
-  * onelogin.sdk.ip  Set an ip address value that can later be retrieved with the getIP method and used on the getSAMLAssertion method to bypass MFA protection if that IP was whitelisted on the user's policy.
+  * onelogin.sdk.region Indicates the region of the Onelogin instance. Possible values: 'us' or 'eu'.
+  * onelogin.sdk.ip Set an ip address value that can later be retrieved with the getIP method and used on the getSAMLAssertion method to bypass MFA protection if that IP was whitelisted on the user's policy. For more info read the documentation of the ip_address parameter at the [Generate SAML Assertion](https://developers.onelogin.com/api-docs/1/getting-started/working-with-api-credentials) documentation.
+
+Read more about Onelogin API credentials at: https://developers.onelogin.com/api-docs/1/getting-started/working-with-api-credentials
 
 ### How the process works
 
