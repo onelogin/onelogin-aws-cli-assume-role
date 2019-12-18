@@ -268,7 +268,21 @@ public class OneloginAWSCLI {
 						System.exit(0);
 					} else {
 						String selectedRole = "";
-						List<String> roleData = attributes.get("https://aws.amazon.com/SAML/Attributes/Role");
+						List<String> roleDataList = attributes.get("https://aws.amazon.com/SAML/Attributes/Role");
+						List<String> roleData = null;
+						if (awsAccountId != null) {
+							roleData = new ArrayList();
+							for (int j = 0; j < roleDataList.size(); j++) {
+								String[] roleInfo = roleDataList.get(j).split(":");
+								String accountId = roleInfo[4];
+								if (accountId.equals(awsAccountId)) {
+									roleData.add(roleDataList.get(j));
+								}
+							}
+						} else {
+    						roleData = new ArrayList(roleDataList);
+						}
+
 						if (roleData.size() == 1) {
 							String[] roleInfo = roleData.get(0).split(":");
 							String accountId = roleInfo[4];
