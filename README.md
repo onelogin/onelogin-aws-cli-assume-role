@@ -99,6 +99,11 @@ Both projects uses a settings file, where [OneLogin SDK properties](https://gith
 
 Read more about Onelogin API credentials at: https://developers.onelogin.com/api-docs/1/getting-started/working-with-api-credentials
 
+In addition the onelogin-aws-assume-role-cli is able to read those SDK attributes from the command line:
+- onelogin-client-id
+- onelogin-client-secret
+- onelogin-region
+
 ### How the process works
 
 #### Step 1. Provide OneLogin data.
