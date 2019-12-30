@@ -49,7 +49,7 @@ public class OneloginAWSCLI {
 	private static String awsRegion = null;
 	private static String awsAccountId = null;
 	private static String awsRoleName = null;
-	private static int duration = 3600;
+	private static int duration = 900;
 	private static String oneloginClientID = null;
 	private static String oneloginClientSecret = null;
 	private static String oneloginRegion = "us";
@@ -156,13 +156,13 @@ public class OneloginAWSCLI {
 				if (value != null && !value.isEmpty()) {
 					duration = Integer.parseInt(value);
 				}
-				if (duration < 3600) {
-					duration = 3600;
+				if (duration < 900) {
+					duration = 900;
 				} else if (duration > 43200) {
-					duration = 3600;
+					duration = 900;
 				}
 			} else {
-				duration = 3600;
+				duration = 900;
 			}
 
 			if (commandLine.hasOption("onelogin-client-id")) {
@@ -402,7 +402,7 @@ public class OneloginAWSCLI {
 							.assumeRoleWithSAML(assumeRoleWithSAMLRequest);
 				} catch (AWSSecurityTokenServiceException e) {
 					if (e.getErrorMessage().contains("'durationSeconds' failed to satisfy constraint") || e.getErrorMessage().contains("DurationSeconds exceeds")) {
-						System.out.print("Introduce a new value, to be used on this Role, for DurationSeconds between 3600 and 43200. Previously was "+ currentDuration + ": ");
+						System.out.print("Introduce a new value, to be used on this Role, for DurationSeconds between 900 and 43200. Previously was "+ currentDuration + ": ");
 						currentDuration = getDuration(scanner);
 
 						assumeRoleWithSAMLRequest = new AssumeRoleWithSAMLRequest()
@@ -547,7 +547,7 @@ public class OneloginAWSCLI {
 				}
 				result = verifyToken(olClient, scanner, appId,
 						deviceIdStr, stateToken, otpToken, mfaVerifyInfo);
-				
+
 			} else {
 				samlResponse = samlEndpointResponse.getSAMLResponse();
 				result.put("samlResponse", samlResponse);
@@ -561,9 +561,9 @@ public class OneloginAWSCLI {
 		Integer answer = null;
 		String value = null;
 		boolean start = true;
-		while (answer == null || (answer < 3600 || answer > 43200)) {
+		while (answer == null || (answer < 900 || answer > 43200)) {
 			if (!start) {
-				System.out.println("Wrong value, insert a value between 3600 and 43200: ");
+				System.out.println("Wrong value, insert a value between 900 and 43200: ");
 			}
 			start = false;
 			value = scanner.next();
@@ -591,7 +591,7 @@ public class OneloginAWSCLI {
 		}
 		return false;
 	}
-	
+
 	public static Map<String, Object> verifyToken(Client olClient, Scanner scanner, String appId,
 			String deviceIdStr, String stateToken, String otpToken, Map<String, String> mfaVerifyInfo) {
 		Map<String, Object> result = new HashMap<String, Object>();
@@ -599,14 +599,14 @@ public class OneloginAWSCLI {
 			SAMLEndpointResponse samlEndpointResponseAfterVerify = olClient.getSAMLAssertionVerifying(appId,
 				deviceIdStr, stateToken, otpToken, null);
 			mfaVerifyInfo.put("otpToken", otpToken);
-			String samlResponse = samlEndpointResponseAfterVerify.getSAMLResponse();	
+			String samlResponse = samlEndpointResponseAfterVerify.getSAMLResponse();
 			result.put("samlResponse", samlResponse);
 			result.put("mfaVerifyInfo", mfaVerifyInfo);
 		} catch (Exception OAuthProblemException){
 			System.out.print("The OTP Token was invalid, please introduce a new one: ");
 			otpToken = scanner.next();
 			result = verifyToken(olClient, scanner, appId,
-					deviceIdStr, stateToken, otpToken, mfaVerifyInfo);		
+					deviceIdStr, stateToken, otpToken, mfaVerifyInfo);
 		}
 		return result;
 	}
