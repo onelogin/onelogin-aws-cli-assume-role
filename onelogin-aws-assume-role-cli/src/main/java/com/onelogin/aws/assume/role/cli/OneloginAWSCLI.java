@@ -321,7 +321,7 @@ public class OneloginAWSCLI {
     						roleData = new ArrayList(roleDataList);
 						}
 
-						if (roleData.size() == 1) {
+						if (roleData.size() == 1 && !roleData.get(0).isEmpty()) {
 							String[] roleInfo = roleData.get(0).split(":");
 							String accountId = roleInfo[4];
 							String roleName = roleInfo[5].replace("role/", "");

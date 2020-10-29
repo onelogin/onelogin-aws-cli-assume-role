@@ -33,9 +33,9 @@ if (!attributes.containsKey("https://aws.amazon.com/SAML/Attributes/Role")) {
 	List<String> roleData = attributes.get("https://aws.amazon.com/SAML/Attributes/Role");
 	if (roleData.size() > 0) {
 %>
-	<form action="credentials.jsp" method="POST">		
+	<form action="credentials.jsp" method="POST">
 <%
-	if (roleData.size() == 1) {
+	if (roleData.size() == 1 && !roleData.get(0).isEmpty()) {
 		String roleDataStr = roleData.get(0);
 		String[] roleInfo = roleDataStr.split(":");
 		String accountId = roleInfo[4];
