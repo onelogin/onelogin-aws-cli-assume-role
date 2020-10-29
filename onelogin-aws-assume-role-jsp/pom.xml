@@ -14,22 +14,27 @@
     <dependency>
       <groupId>com.amazonaws</groupId>
       <artifactId>aws-java-sdk-sts</artifactId>
-      <version>1.11.191</version>
+      <version>1.11.762</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.httpcomponents</groupId>
+      <artifactId>httpclient</artifactId>
+      <version>4.5.9</version>
     </dependency>
     <dependency>
       <groupId>com.onelogin</groupId>
       <artifactId>onelogin-java-sdk</artifactId>
-      <version>1.5.0</version>
+      <version>1.6.1</version>
     </dependency>
     <dependency>
       <groupId>com.onelogin</groupId>
       <artifactId>java-saml-core</artifactId>
-      <version>2.4.0</version>
+      <version>2.6.0</version>
     </dependency>
     <dependency>
       <groupId>javax.servlet</groupId>
-      <artifactId>servlet-api</artifactId>
-      <version>2.5</version>
+      <artifactId>javax.servlet-api</artifactId>
+      <version>4.0.1</version>
       <scope>provided</scope>
     </dependency>
   </dependencies>
