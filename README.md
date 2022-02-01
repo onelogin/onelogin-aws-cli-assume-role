@@ -63,7 +63,7 @@ aws-cli
   <dependency>
       <groupId>com.onelogin</groupId>
       <artifactId>onelogin-aws-assume-role-cli</artifactId>
-      <version>1.1.0</version>
+      <version>1.1.3</version>
   </dependency>
 ```
 
@@ -72,7 +72,7 @@ aws-jsp
   <dependency>
       <groupId>com.onelogin</groupId>
       <artifactId>onelogin-aws-assume-role-jsp</artifactId>
-      <version>1.1.0</version>
+      <version>1.1.3</version>
   </dependency>
 ```
 
@@ -83,7 +83,7 @@ It works with Java7 and Java8.
 * [com.amazonaws:aws-java-sdk](https://github.com/aws/aws-sdk-java)
 * [com.onelogin:onelogin-java-sdk](https://github.com/onelogin/onelogin-java-sdk)
 * [com.onelogin:java-saml-core](https://github.com/onelogin/java-saml)
-* javax.servlet:servlet-api Required by the example Web project
+* javax.servlet:javax-servlet-api Required by the example Web project
 
 ## Getting started
 
