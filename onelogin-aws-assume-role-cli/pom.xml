@@ -75,6 +75,9 @@
               <Class-Path>.</Class-Path>
             </manifestEntries>
           </archive>
+          <descriptorRefs>
+            <descriptorRef>jar-with-dependencies</descriptorRef>
+          </descriptorRefs>
         </configuration>
       </plugin>
       <plugin>
