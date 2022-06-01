@@ -54,6 +54,8 @@ public class OneloginAWSCLI {
 	private static String oneloginClientID = null;
 	private static String oneloginClientSecret = null;
 	private static String oneloginRegion = "us";
+	private static String ip = null;
+	private static Integer samlApiVersion = 1;
 
 	public static Boolean commandParser(final String[] commandLineArguments) {
 		final CommandLineParser cmd = new DefaultParser();
@@ -187,6 +189,25 @@ public class OneloginAWSCLI {
 				}
 			}
 
+			if (commandLine.hasOption("ip")) {
+				value = commandLine.getOptionValue("ip");
+				if (value != null && !value.isEmpty()) {
+					ip = value;
+				}
+			}
+
+			if (commandLine.hasOption("saml-api-version")) {
+				value = commandLine.getOptionValue("saml-api-version");
+				if (value != null && !value.isEmpty()) {
+					samlApiVersion = Integer.parseInt(value);
+				}
+				if (samlApiVersion < 1) {
+					samlApiVersion = 1;
+				} else if (samlApiVersion > 2) {
+					samlApiVersion = 2;
+				}
+			}
+
 			// VALIDATIONS
 			
 			if (((awsAccountId != null && !awsAccountId.isEmpty()) && (awsRoleName == null || awsRoleName.isEmpty())) || ((awsRoleName != null && !awsRoleName.isEmpty()) && (awsAccountId == null || awsAccountId.isEmpty()))) {
@@ -224,6 +245,8 @@ public class OneloginAWSCLI {
 		options.addOption(null, "onelogin-client-id", true, "A valid OneLogin API client_id");
 		options.addOption(null, "onelogin-client-secret", true, "A valid OneLogin API client_secret");
 		options.addOption(null, "onelogin-region", true, "Onelogin region. us or eu  (Default value: us)");
+		options.addOption(null, "ip", true, "The IP address to use for the SAML assertion");
+		options.addOption(null, "saml-api-version", true, "The version of the OneLogin SAML APIs to use (Default value 1)");
 
 		return options;
 	}
@@ -243,7 +266,15 @@ public class OneloginAWSCLI {
 		} else {
 			olClient = new Client(oneloginClientID, oneloginClientSecret, oneloginRegion);
 		}
-		String ip = olClient.getIP();
+
+		// Set the version of the OneLogin SAML API to use
+		HashMap<String, Integer> apic = new HashMap<String, Integer>();
+		apic.put("assertion", samlApiVersion);
+		olClient.setApiConfiguration(apic);
+
+		if (ip == null) {
+			ip = olClient.getIP();
+		}
 		olClient.getAccessToken();
 		Scanner scanner = new Scanner(System.in);
 		int currentDuration = duration;
@@ -490,6 +521,13 @@ public class OneloginAWSCLI {
 		SAMLEndpointResponse samlEndpointResponse = olClient.getSAMLAssertion(oneloginUsernameOrEmail, oneloginPassword,
 				appId, oneloginDomain, ip);
 		String status = samlEndpointResponse.getType();
+
+		// When the status is null, then the request failed.
+		if (status == null) {
+			System.out.println(samlEndpointResponse.getMessage());
+			throw new Exception("SAML assertion failed");
+		}
+
 		while (status.equals("pending")) {
 			TimeUnit.SECONDS.sleep(30);
 			samlEndpointResponse = olClient.getSAMLAssertion(oneloginUsernameOrEmail, oneloginPassword, appId,
