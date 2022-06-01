@@ -63,7 +63,7 @@ aws-cli
   <dependency>
       <groupId>com.onelogin</groupId>
       <artifactId>onelogin-aws-assume-role-cli</artifactId>
-      <version>1.1.3</version>
+      <version>1.1.4</version>
   </dependency>
 ```
 
@@ -72,7 +72,7 @@ aws-jsp
   <dependency>
       <groupId>com.onelogin</groupId>
       <artifactId>onelogin-aws-assume-role-jsp</artifactId>
-      <version>1.1.3</version>
+      <version>1.1.4</version>
   </dependency>
 ```
 

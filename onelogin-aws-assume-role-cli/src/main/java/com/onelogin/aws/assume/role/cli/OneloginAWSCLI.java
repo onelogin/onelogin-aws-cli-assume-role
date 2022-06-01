@@ -31,6 +31,7 @@ import com.amazonaws.services.securitytoken.model.AssumedRoleUser;
 import com.amazonaws.services.securitytoken.model.Credentials;
 import com.onelogin.saml2.authn.SamlResponse;
 import com.onelogin.saml2.http.HttpRequest;
+import com.onelogin.saml2.settings.SettingsBuilder;
 import com.onelogin.sdk.conn.Client;
 import com.onelogin.sdk.model.Device;
 import com.onelogin.sdk.model.MFA;
@@ -299,7 +300,7 @@ public class OneloginAWSCLI {
 				if (i == 0) {
 					HttpRequest simulatedRequest = new HttpRequest("http://example.com");
 					simulatedRequest = simulatedRequest.addParameter("SAMLResponse", samlResponse);
-					SamlResponse samlResponseObj = new SamlResponse(null, simulatedRequest);
+					SamlResponse samlResponseObj = new SamlResponse(new SettingsBuilder().build(), simulatedRequest);
 					HashMap<String, List<String>> attributes = samlResponseObj.getAttributes();
 					if (!attributes.containsKey("https://aws.amazon.com/SAML/Attributes/Role")) {
 						System.out.print("SAMLResponse from Identity Provider does not contain AWS Role info");
@@ -499,6 +500,7 @@ public class OneloginAWSCLI {
 		if (status.equals("success")) {
 			if (samlEndpointResponse.getMFA() != null) {
 				MFA mfa = samlEndpointResponse.getMFA();
+				stateToken = mfa.getStateToken();
 				List<Device> devices = mfa.getDevices();
 
 				if (mfaVerifyInfo == null) {
@@ -507,7 +509,10 @@ public class OneloginAWSCLI {
 					System.out.println("Authenticate using one of these devices:");
 				} else {
 					deviceIdStr = mfaVerifyInfo.get("deviceId");
-					if (!checkDeviceExists(devices, Long.parseLong(deviceIdStr))) {
+					if (deviceIdStr == null || deviceIdStr.isEmpty()) {
+						System.out.println("No device info found");
+						mfaVerifyInfo = null;
+					} else if (!checkDeviceExists(devices, Long.parseLong(deviceIdStr))) {
 						System.out.println();
 						System.out.println("The device selected with ID " + deviceIdStr + " is not available anymore");
 						System.out.println("Those are the devices available now:");
@@ -537,13 +542,11 @@ public class OneloginAWSCLI {
 
 					System.out.print("Enter the OTP Token for " + deviceSelection.getType() + ": ");
 					otpToken = scanner.next();
-					stateToken = mfa.getStateToken();
 					mfaVerifyInfo = new HashMap<String, String>();
 					mfaVerifyInfo.put("otpToken", otpToken);
-					mfaVerifyInfo.put("stateToken", stateToken);
+					mfaVerifyInfo.put("deviceId", deviceIdStr);
 				} else {
 					otpToken = mfaVerifyInfo.get("otpToken");
-					stateToken = mfaVerifyInfo.get("stateToken");
 				}
 				result = verifyToken(olClient, scanner, appId,
 						deviceIdStr, stateToken, otpToken, mfaVerifyInfo);
