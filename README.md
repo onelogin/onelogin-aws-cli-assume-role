@@ -160,7 +160,7 @@ You can extend CLI functionality by using arguments. There are several:
 * profile Save Temporal AWS credentials using that profile name (If not used, data is prompted instead saved in file)
 * file Set a custom path to save the AWS credentials. (if not used, the default path is used)
 * ip To use in the SAML assertion.
-* samlApiVersion To set the version of OneLogin's SAML API to use. (options are: 1, 2)
+* saml-api-version To set the version of OneLogin's SAML API to use. (options are: 1, 2)
 
 _Note: If you're bored typing your
 username (`--username`),
