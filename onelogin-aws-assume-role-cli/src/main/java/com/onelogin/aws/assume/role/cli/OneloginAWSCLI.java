@@ -31,6 +31,7 @@ import com.amazonaws.services.securitytoken.model.AssumedRoleUser;
 import com.amazonaws.services.securitytoken.model.Credentials;
 import com.onelogin.saml2.authn.SamlResponse;
 import com.onelogin.saml2.http.HttpRequest;
+import com.onelogin.saml2.settings.SettingsBuilder;
 import com.onelogin.sdk.conn.Client;
 import com.onelogin.sdk.model.Device;
 import com.onelogin.sdk.model.MFA;
@@ -53,6 +54,8 @@ public class OneloginAWSCLI {
 	private static String oneloginClientID = null;
 	private static String oneloginClientSecret = null;
 	private static String oneloginRegion = "us";
+	private static String ip = null;
+	private static Integer samlApiVersion = 1;
 
 	public static Boolean commandParser(final String[] commandLineArguments) {
 		final CommandLineParser cmd = new DefaultParser();
@@ -186,6 +189,25 @@ public class OneloginAWSCLI {
 				}
 			}
 
+			if (commandLine.hasOption("ip")) {
+				value = commandLine.getOptionValue("ip");
+				if (value != null && !value.isEmpty()) {
+					ip = value;
+				}
+			}
+
+			if (commandLine.hasOption("saml-api-version")) {
+				value = commandLine.getOptionValue("saml-api-version");
+				if (value != null && !value.isEmpty()) {
+					samlApiVersion = Integer.parseInt(value);
+				}
+				if (samlApiVersion < 1) {
+					samlApiVersion = 1;
+				} else if (samlApiVersion > 2) {
+					samlApiVersion = 2;
+				}
+			}
+
 			// VALIDATIONS
 			
 			if (((awsAccountId != null && !awsAccountId.isEmpty()) && (awsRoleName == null || awsRoleName.isEmpty())) || ((awsRoleName != null && !awsRoleName.isEmpty()) && (awsAccountId == null || awsAccountId.isEmpty()))) {
@@ -223,6 +245,8 @@ public class OneloginAWSCLI {
 		options.addOption(null, "onelogin-client-id", true, "A valid OneLogin API client_id");
 		options.addOption(null, "onelogin-client-secret", true, "A valid OneLogin API client_secret");
 		options.addOption(null, "onelogin-region", true, "Onelogin region. us or eu  (Default value: us)");
+		options.addOption(null, "ip", true, "The IP address to use for the SAML assertion");
+		options.addOption(null, "saml-api-version", true, "The version of the OneLogin SAML APIs to use (Default value 1)");
 
 		return options;
 	}
@@ -242,7 +266,15 @@ public class OneloginAWSCLI {
 		} else {
 			olClient = new Client(oneloginClientID, oneloginClientSecret, oneloginRegion);
 		}
-		String ip = olClient.getIP();
+
+		// Set the version of the OneLogin SAML API to use
+		HashMap<String, Integer> apic = new HashMap<String, Integer>();
+		apic.put("assertion", samlApiVersion);
+		olClient.setApiConfiguration(apic);
+
+		if (ip == null) {
+			ip = olClient.getIP();
+		}
 		olClient.getAccessToken();
 		Scanner scanner = new Scanner(System.in);
 		int currentDuration = duration;
@@ -299,7 +331,7 @@ public class OneloginAWSCLI {
 				if (i == 0) {
 					HttpRequest simulatedRequest = new HttpRequest("http://example.com");
 					simulatedRequest = simulatedRequest.addParameter("SAMLResponse", samlResponse);
-					SamlResponse samlResponseObj = new SamlResponse(null, simulatedRequest);
+					SamlResponse samlResponseObj = new SamlResponse(new SettingsBuilder().build(), simulatedRequest);
 					HashMap<String, List<String>> attributes = samlResponseObj.getAttributes();
 					if (!attributes.containsKey("https://aws.amazon.com/SAML/Attributes/Role")) {
 						System.out.print("SAMLResponse from Identity Provider does not contain AWS Role info");
@@ -489,6 +521,13 @@ public class OneloginAWSCLI {
 		SAMLEndpointResponse samlEndpointResponse = olClient.getSAMLAssertion(oneloginUsernameOrEmail, oneloginPassword,
 				appId, oneloginDomain, ip);
 		String status = samlEndpointResponse.getType();
+
+		// When the status is null, then the request failed.
+		if (status == null) {
+			System.out.println(samlEndpointResponse.getMessage());
+			throw new Exception("SAML assertion failed");
+		}
+
 		while (status.equals("pending")) {
 			TimeUnit.SECONDS.sleep(30);
 			samlEndpointResponse = olClient.getSAMLAssertion(oneloginUsernameOrEmail, oneloginPassword, appId,
@@ -499,6 +538,7 @@ public class OneloginAWSCLI {
 		if (status.equals("success")) {
 			if (samlEndpointResponse.getMFA() != null) {
 				MFA mfa = samlEndpointResponse.getMFA();
+				stateToken = mfa.getStateToken();
 				List<Device> devices = mfa.getDevices();
 
 				if (mfaVerifyInfo == null) {
@@ -507,7 +547,10 @@ public class OneloginAWSCLI {
 					System.out.println("Authenticate using one of these devices:");
 				} else {
 					deviceIdStr = mfaVerifyInfo.get("deviceId");
-					if (!checkDeviceExists(devices, Long.parseLong(deviceIdStr))) {
+					if (deviceIdStr == null || deviceIdStr.isEmpty()) {
+						System.out.println("No device info found");
+						mfaVerifyInfo = null;
+					} else if (!checkDeviceExists(devices, Long.parseLong(deviceIdStr))) {
 						System.out.println();
 						System.out.println("The device selected with ID " + deviceIdStr + " is not available anymore");
 						System.out.println("Those are the devices available now:");
@@ -537,13 +580,11 @@ public class OneloginAWSCLI {
 
 					System.out.print("Enter the OTP Token for " + deviceSelection.getType() + ": ");
 					otpToken = scanner.next();
-					stateToken = mfa.getStateToken();
 					mfaVerifyInfo = new HashMap<String, String>();
 					mfaVerifyInfo.put("otpToken", otpToken);
-					mfaVerifyInfo.put("stateToken", stateToken);
+					mfaVerifyInfo.put("deviceId", deviceIdStr);
 				} else {
 					otpToken = mfaVerifyInfo.get("otpToken");
-					stateToken = mfaVerifyInfo.get("stateToken");
 				}
 				result = verifyToken(olClient, scanner, appId,
 						deviceIdStr, stateToken, otpToken, mfaVerifyInfo);

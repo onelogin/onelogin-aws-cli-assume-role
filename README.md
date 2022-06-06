@@ -63,7 +63,7 @@ aws-cli
   <dependency>
       <groupId>com.onelogin</groupId>
       <artifactId>onelogin-aws-assume-role-cli</artifactId>
-      <version>1.1.3</version>
+      <version>1.2.0</version>
   </dependency>
 ```
 
@@ -72,7 +72,7 @@ aws-jsp
   <dependency>
       <groupId>com.onelogin</groupId>
       <artifactId>onelogin-aws-assume-role-jsp</artifactId>
-      <version>1.1.3</version>
+      <version>1.2.0</version>
   </dependency>
 ```
 
@@ -159,6 +159,8 @@ You can extend CLI functionality by using arguments. There are several:
 * time Sleep time between iterations, in minutes (default value: 45) [Must be between 15 and 60]
 * profile Save Temporal AWS credentials using that profile name (If not used, data is prompted instead saved in file)
 * file Set a custom path to save the AWS credentials. (if not used, the default path is used)
+* ip To use in the SAML assertion.
+* saml-api-version To set the version of OneLogin's SAML API to use. (options are: 1, 2)
 
 _Note: If you're bored typing your
 username (`--username`),
