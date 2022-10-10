@@ -63,7 +63,7 @@ aws-cli
   <dependency>
       <groupId>com.onelogin</groupId>
       <artifactId>onelogin-aws-assume-role-cli</artifactId>
-      <version>1.2.1</version>
+      <version>1.2.2</version>
   </dependency>
 ```
 
