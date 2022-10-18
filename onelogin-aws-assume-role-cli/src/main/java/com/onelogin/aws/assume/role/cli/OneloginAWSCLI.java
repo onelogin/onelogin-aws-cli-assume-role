@@ -2,6 +2,8 @@ package com.onelogin.aws.assume.role.cli;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -209,7 +211,7 @@ public class OneloginAWSCLI {
 			}
 
 			// VALIDATIONS
-			
+
 			if (((awsAccountId != null && !awsAccountId.isEmpty()) && (awsRoleName == null || awsRoleName.isEmpty())) || ((awsRoleName != null && !awsRoleName.isEmpty()) && (awsAccountId == null || awsAccountId.isEmpty()))) {
 				System.err.println("--aws-account-id and --aws-role-name need to be set together");
 				return false;
@@ -360,6 +362,24 @@ public class OneloginAWSCLI {
 							System.out.println("Role selected: " + roleName + " (Account " + accountId + ")");
 							selectedRole = roleData.get(0);
 						} else if (roleData.size() > 1) {
+							roleData.sort(new Comparator<String>(){
+								@Override
+								public int compare(String s1, String s2) {
+									String name1 = s1.split(":")[5];
+									String name2 = s2.split(":")[5];
+									List<String> names = new ArrayList<>();
+									if (name1 == name2) {return 0;}
+									names.add(name1);
+									names.add(name2);
+									Collections.sort(names);
+									if (names.get(0) == name1){
+										return -1;
+									}
+									else {
+										return 1;
+									}
+								}
+							});
 							System.out.println("\nAvailable AWS Roles");
 							System.out.println("-----------------------------------------------------------------------");
 							Map<String, Map<String, Integer>> rolesByApp = new HashMap<String,Map<String, Integer>>();
