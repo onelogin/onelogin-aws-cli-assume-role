@@ -57,7 +57,7 @@ public class OneloginAWSCLI {
 	private static String oneloginClientSecret = null;
 	private static String oneloginRegion = "us";
 	private static String ip = null;
-	private static Integer samlApiVersion = 1;
+	private static Integer samlApiVersion = 2;
 
 	public static Boolean commandParser(final String[] commandLineArguments) {
 		final CommandLineParser cmd = new DefaultParser();
@@ -272,12 +272,13 @@ public class OneloginAWSCLI {
 		// Set the version of the OneLogin SAML API to use
 		HashMap<String, Integer> apic = new HashMap<String, Integer>();
 		apic.put("assertion", samlApiVersion);
+		System.out.println("----------------test------------:"+samlApiVersion);
 		olClient.setApiConfiguration(apic);
 
 		if (ip == null) {
 			ip = olClient.getIP();
 		}
-		olClient.getAccessToken();
+		//olClient.getAccessToken();
 		Scanner scanner = new Scanner(System.in);
 		int currentDuration = duration;
 		try {
