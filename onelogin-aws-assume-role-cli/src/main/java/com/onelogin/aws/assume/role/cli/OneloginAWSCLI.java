@@ -272,13 +272,12 @@ public class OneloginAWSCLI {
 		// Set the version of the OneLogin SAML API to use
 		HashMap<String, Integer> apic = new HashMap<String, Integer>();
 		apic.put("assertion", samlApiVersion);
-		System.out.println("----------------test------------:"+samlApiVersion);
 		olClient.setApiConfiguration(apic);
 
 		if (ip == null) {
 			ip = olClient.getIP();
 		}
-		//olClient.getAccessToken();
+		olClient.getAccessToken();
 		Scanner scanner = new Scanner(System.in);
 		int currentDuration = duration;
 		try {
