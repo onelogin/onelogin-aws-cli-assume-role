@@ -57,7 +57,7 @@ public class OneloginAWSCLI {
 	private static String oneloginClientSecret = null;
 	private static String oneloginRegion = "us";
 	private static String ip = null;
-	private static Integer samlApiVersion = 1;
+	private static Integer samlApiVersion = 2;
 
 	public static Boolean commandParser(final String[] commandLineArguments) {
 		final CommandLineParser cmd = new DefaultParser();
