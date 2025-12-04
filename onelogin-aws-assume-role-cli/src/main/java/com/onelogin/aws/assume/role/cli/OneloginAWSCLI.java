@@ -498,13 +498,20 @@ public class OneloginAWSCLI {
 						profileName = "default";
 					}
 
-					Map<String, String> properties = new HashMap<String, String>();
-					properties.put(ProfileKeyConstants.AWS_ACCESS_KEY_ID, stsCredentials.getAccessKeyId());
-					properties.put(ProfileKeyConstants.AWS_SECRET_ACCESS_KEY, stsCredentials.getSecretAccessKey());
-					properties.put(ProfileKeyConstants.AWS_SESSION_TOKEN, stsCredentials.getSessionToken());
-					properties.put(ProfileKeyConstants.REGION, awsRegion);
+					// save credentials
+					Map<String, String> credentialsProperties = new HashMap<String, String>();
+					credentialsProperties.put(ProfileKeyConstants.AWS_ACCESS_KEY_ID, stsCredentials.getAccessKeyId());
+					credentialsProperties.put(ProfileKeyConstants.AWS_SECRET_ACCESS_KEY, stsCredentials.getSecretAccessKey());
+					credentialsProperties.put(ProfileKeyConstants.AWS_SESSION_TOKEN, stsCredentials.getSessionToken());
 
-					ProfilesConfigFileWriter.modifyOneProfile(file, profileName, new Profile(profileName, properties, null));
+					ProfilesConfigFileWriter.modifyOneProfile(file, profileName, new Profile(profileName, credentialsProperties, null));
+
+					// save config
+					File configFile = AwsProfileFileLocationProvider.DEFAULT_CONFIG_LOCATION_PROVIDER.getLocation();
+					Map<String, String> regionProperties = new HashMap<String, String>();
+					regionProperties.put(ProfileKeyConstants.REGION, awsRegion);
+
+					ProfilesConfigFileWriter.modifyOneProfile(configFile, profileName, new Profile(profileName, regionProperties, null));
 
 					System.out.println("\n-----------------------------------------------------------------------");
 					System.out.println("Success!\n");
