@@ -96,8 +96,9 @@ public class OneloginAWSCLI {
 				value = commandLine.getOptionValue("profile");
 				if (value != null && !value.isEmpty()) {
 					// Strip "profile " prefix if present to avoid AWS SDK warning
-					if (value.startsWith("profile ")) {
-						profileName = value.substring(8); // Remove "profile " (8 characters)
+					final String PROFILE_PREFIX = "profile ";
+					if (value.startsWith(PROFILE_PREFIX)) {
+						profileName = value.substring(PROFILE_PREFIX.length());
 					} else {
 						profileName = value;
 					}
