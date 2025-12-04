@@ -95,7 +95,12 @@ public class OneloginAWSCLI {
 			if (commandLine.hasOption("profile")) {
 				value = commandLine.getOptionValue("profile");
 				if (value != null && !value.isEmpty()) {
-					profileName = value;
+					// Strip "profile " prefix if present to avoid AWS SDK warning
+					if (value.startsWith("profile ")) {
+						profileName = value.substring(8); // Remove "profile " (8 characters)
+					} else {
+						profileName = value;
+					}
 				} else {
 					profileName = "default";
 				}
