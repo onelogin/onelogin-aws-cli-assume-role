@@ -41,6 +41,7 @@ import com.onelogin.sdk.model.SAMLEndpointResponse;
 
 public class OneloginAWSCLI {
 
+	private static final String PROFILE_PREFIX = "profile ";
 	private static int time = 45;
 	private static int loop = 1;
 	private static String profileName = null;
@@ -96,12 +97,7 @@ public class OneloginAWSCLI {
 				value = commandLine.getOptionValue("profile");
 				if (value != null && !value.isEmpty()) {
 					// Strip "profile " prefix if present to avoid AWS SDK warning
-					final String PROFILE_PREFIX = "profile ";
-					if (value.startsWith(PROFILE_PREFIX)) {
-						profileName = value.substring(PROFILE_PREFIX.length());
-					} else {
-						profileName = value;
-					}
+					profileName = value.startsWith(PROFILE_PREFIX) ? value.substring(PROFILE_PREFIX.length()) : value;
 				} else {
 					profileName = "default";
 				}
