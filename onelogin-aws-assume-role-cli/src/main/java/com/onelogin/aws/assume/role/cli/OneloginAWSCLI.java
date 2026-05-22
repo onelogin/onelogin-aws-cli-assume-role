@@ -59,6 +59,7 @@ public class OneloginAWSCLI {
 	private static String oneloginRegion = "us";
 	private static String ip = null;
 	private static Integer samlApiVersion = 2;
+	private static String mfaOtpToken = null;
 
 	public static Boolean commandParser(final String[] commandLineArguments) {
 		final CommandLineParser cmd = new DefaultParser();
@@ -141,6 +142,13 @@ public class OneloginAWSCLI {
 				value = commandLine.getOptionValue("password");
 				if (value != null && !value.isEmpty()) {
 					oneloginPassword = value;
+				}
+			}
+
+			if (commandLine.hasOption("otp-token")) {
+				value = commandLine.getOptionValue("otp-token");
+				if (value != null && !value.isEmpty()) {
+					mfaOtpToken = value;
 				}
 			}
 
@@ -243,6 +251,7 @@ public class OneloginAWSCLI {
 		options.addOption("d", "subdomain", true, "OneLogin Instance Sub Domain.");
 		options.addOption("u", "username", true, "OneLogin username.");
 		options.addOption(null, "password", true, "OneLogin password.");
+		options.addOption(null, "otp-token", true, "OTP Token for MFA. Used for the first MFA attempt only; retries fall back to the interactive prompt.");
 		options.addOption(null, "aws-account-id", true, "AWS Account ID.");
 		options.addOption(null, "aws-role-name", true, "AWS Role Name.");
 		options.addOption("z", "duration", true, "Desired AWS Credential Duration");
@@ -607,8 +616,13 @@ public class OneloginAWSCLI {
 					deviceId = deviceSelection.getID();
 					deviceIdStr = deviceId.toString();
 
-					System.out.print("Enter the OTP Token for " + deviceSelection.getType() + ": ");
-					otpToken = scanner.next();
+					if (mfaOtpToken != null && !mfaOtpToken.isEmpty()) {
+						otpToken = mfaOtpToken;
+						mfaOtpToken = null;
+					} else {
+						System.out.print("Enter the OTP Token for " + deviceSelection.getType() + ": ");
+						otpToken = scanner.next();
+					}
 					mfaVerifyInfo = new HashMap<String, String>();
 					mfaVerifyInfo.put("otpToken", otpToken);
 					mfaVerifyInfo.put("deviceId", deviceIdStr);
