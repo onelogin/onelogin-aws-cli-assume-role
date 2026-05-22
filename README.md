@@ -185,6 +185,14 @@ so your password won't be saved in you command line history.
 Please note that your password **will** be visible in your process list,
 if you use this flag (as the expanded command line arguments are part of the name of the process)._
 
+If your account is enrolled in MFA, you can also pass the one-time code as
+`--otp-token <code>`, which skips the interactive `Enter the OTP Token` prompt
+on the first attempt. The same process-list visibility caveat as `--password`
+applies: prefer piping from a TOTP CLI such as `oathtool`, for example
+`--otp-token $(oathtool --totp -b "$ONELOGIN_TOTP_SECRET")`. If the supplied
+code is rejected by OneLogin, the tool falls back to prompting interactively;
+the `--otp-token` value is **not** retried.
+
 For more info execute the --help option.
 
 ### JSP
