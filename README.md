@@ -172,6 +172,12 @@ the tool won't ask for them any more._
 
 The selection of the AWS account and Role can be also be done with the --aws-account-id and --aws-role-name parameters.
 
+If your account has more than one MFA device enrolled and you always want to use
+the same one, pass `--mfa-device-index <n>` where `n` is the zero-based index
+shown in the interactive `Select the desired MFA Device [0-N]` prompt. If the
+index is out of range for the device list returned by OneLogin, the tool falls
+back to the interactive prompt.
+
 _Note: Specifying your password directly with `--password` is bad practice,
 you should use that flag together with password managers, eg. with the OSX Keychain:
 `--password $(security find-generic-password -a $USER -s onelogin -w)`,

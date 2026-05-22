@@ -60,6 +60,7 @@ public class OneloginAWSCLI {
 	private static String ip = null;
 	private static Integer samlApiVersion = 2;
 	private static String mfaOtpToken = null;
+	private static Integer mfaDeviceIndex = null;
 
 	public static Boolean commandParser(final String[] commandLineArguments) {
 		final CommandLineParser cmd = new DefaultParser();
@@ -149,6 +150,17 @@ public class OneloginAWSCLI {
 				value = commandLine.getOptionValue("otp-token");
 				if (value != null && !value.isEmpty()) {
 					mfaOtpToken = value;
+				}
+			}
+
+			if (commandLine.hasOption("mfa-device-index")) {
+				value = commandLine.getOptionValue("mfa-device-index");
+				if (value != null && !value.isEmpty()) {
+					try {
+						mfaDeviceIndex = Integer.valueOf(value);
+					} catch (NumberFormatException e) {
+						System.out.println("Warning: --mfa-device-index must be an integer; ignoring value: " + value);
+					}
 				}
 			}
 
@@ -252,6 +264,7 @@ public class OneloginAWSCLI {
 		options.addOption("u", "username", true, "OneLogin username.");
 		options.addOption(null, "password", true, "OneLogin password.");
 		options.addOption(null, "otp-token", true, "OTP Token for MFA. Used for the first MFA attempt only; retries fall back to the interactive prompt.");
+		options.addOption(null, "mfa-device-index", true, "Pre-select MFA device by zero-based index (skips the interactive device-selection prompt).");
 		options.addOption(null, "aws-account-id", true, "AWS Account ID.");
 		options.addOption(null, "aws-role-name", true, "AWS Role Name.");
 		options.addOption("z", "duration", true, "Desired AWS Credential Duration");
@@ -602,7 +615,12 @@ public class OneloginAWSCLI {
 					Integer deviceInput;
 					if (devices.size() == 1) {
 						deviceInput = 0;
+					} else if (mfaDeviceIndex != null && mfaDeviceIndex >= 0 && mfaDeviceIndex < devices.size()) {
+						deviceInput = mfaDeviceIndex;
 					} else {
+						if (mfaDeviceIndex != null) {
+							System.out.println("--mfa-device-index " + mfaDeviceIndex + " is out of range [0-" + (devices.size() - 1) + "]; falling back to interactive selection.");
+						}
 						for (int i = 0; i < devices.size(); i++) {
 							device = devices.get(i);
 							System.out.println(" " + i + " | " + device.getType());
