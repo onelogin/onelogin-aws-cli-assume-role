@@ -595,8 +595,9 @@ public class OneloginAWSCLI {
 				inProfile = profileName.equals(getConfigSectionProfileName(trimmed));
 				profileFound |= inProfile;
 				regionWritten = false;
-			} else if (inProfile && trimmed.matches(ProfileKeyConstants.REGION + "\\s*=.*")) {
-				line = regionLine;
+			} else if (inProfile && trimmed.matches("(?i)" + ProfileKeyConstants.REGION + "\\s*[=:].*")) {
+				// keep the indentation, which the AWS CLI's parser uses to tell continuation lines apart
+				line = line.substring(0, line.indexOf(trimmed)) + regionLine;
 				regionWritten = true;
 			}
 			output.add(line);
@@ -623,10 +624,12 @@ public class OneloginAWSCLI {
 
 	// Returns the profile a config file section header belongs to, or null for other sections (e.g. sso-session)
 	static String getConfigSectionProfileName(String sectionHeader) {
-		if (!sectionHeader.endsWith("]")) {
+		// like Python's configparser, the name runs to the last "]", so a trailing comment is allowed
+		int end = sectionHeader.lastIndexOf(']');
+		if (end < 0) {
 			return null;
 		}
-		String name = sectionHeader.substring(1, sectionHeader.length() - 1).trim();
+		String name = sectionHeader.substring(1, end).trim();
 		if (name.equals("default")) {
 			return name;
 		}
