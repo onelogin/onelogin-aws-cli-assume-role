@@ -586,24 +586,42 @@ public class OneloginAWSCLI {
 		boolean inProfile = false;
 		boolean profileFound = false;
 		boolean regionWritten = false;
+		// The AWS CLI parses this file with Python's configparser, which reads a line indented deeper than
+		// the option before it as part of that option's value (e.g. nested s3 settings). Skip those lines,
+		// and indent the lines we write like the line before them so they aren't read that way either.
+		boolean inOption = false;
+		String indent = "";
 		for (String line : lines) {
 			String trimmed = line.trim();
+			if (trimmed.isEmpty() || trimmed.startsWith("#") || trimmed.startsWith(";")) {
+				output.add(line);
+				continue;
+			}
+			String lineIndent = line.substring(0, line.indexOf(trimmed));
+			if (inOption && lineIndent.length() > indent.length()) {
+				output.add(line);
+				continue;
+			}
 			if (trimmed.startsWith("[")) {
 				if (inProfile && !regionWritten) {
-					addToSection(output, regionLine);
+					addToSection(output, indent + regionLine);
 				}
 				inProfile = profileName.equals(getConfigSectionProfileName(trimmed));
 				profileFound |= inProfile;
 				regionWritten = false;
-			} else if (inProfile && trimmed.matches("(?i)" + ProfileKeyConstants.REGION + "\\s*[=:].*")) {
-				// keep the indentation, which the AWS CLI's parser uses to tell continuation lines apart
-				line = line.substring(0, line.indexOf(trimmed)) + regionLine;
-				regionWritten = true;
+				inOption = false;
+			} else {
+				if (inProfile && trimmed.matches("(?i)" + ProfileKeyConstants.REGION + "\\s*[=:].*")) {
+					line = lineIndent + regionLine;
+					regionWritten = true;
+				}
+				inOption = true;
 			}
+			indent = lineIndent;
 			output.add(line);
 		}
 		if (inProfile && !regionWritten) {
-			addToSection(output, regionLine);
+			addToSection(output, indent + regionLine);
 		}
 
 		if (!profileFound) {
@@ -634,7 +652,13 @@ public class OneloginAWSCLI {
 			return name;
 		}
 		if (name.startsWith(PROFILE_PREFIX)) {
-			return name.substring(PROFILE_PREFIX.length()).trim();
+			String profile = name.substring(PROFILE_PREFIX.length()).trim();
+			// the AWS CLI also accepts a quoted name, e.g. [profile "work"]
+			if (profile.length() > 1 && (profile.charAt(0) == '"' || profile.charAt(0) == '\'')
+					&& profile.charAt(profile.length() - 1) == profile.charAt(0)) {
+				profile = profile.substring(1, profile.length() - 1);
+			}
+			return profile;
 		}
 		return null;
 	}
