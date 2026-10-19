@@ -1,7 +1,11 @@
 package com.onelogin.aws.assume.role.cli;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -22,7 +26,6 @@ import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.auth.profile.ProfilesConfigFileWriter;
 import com.amazonaws.auth.profile.internal.Profile;
 import com.amazonaws.auth.profile.internal.ProfileKeyConstants;
-import com.amazonaws.profile.path.AwsProfileFileLocationProvider;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder;
@@ -42,6 +45,8 @@ import com.onelogin.sdk.model.SAMLEndpointResponse;
 public class OneloginAWSCLI {
 
 	private static final String PROFILE_PREFIX = "profile ";
+	private static final String CREDENTIALS_FILE_ENV_VAR = "AWS_CREDENTIAL_PROFILES_FILE";
+	private static final String CONFIG_FILE_ENV_VAR = "AWS_CONFIG_FILE";
 	private static int time = 45;
 	private static int loop = 1;
 	private static String profileName = null;
@@ -514,26 +519,13 @@ public class OneloginAWSCLI {
 					System.out.println();
 				} else {
 					if (file == null) {
-						file = AwsProfileFileLocationProvider.DEFAULT_CREDENTIALS_LOCATION_PROVIDER.getLocation();
+						file = getAwsFile(CREDENTIALS_FILE_ENV_VAR, "credentials");
 					}
 					if (profileName == null) {
 						profileName = "default";
 					}
 
-					// save credentials
-					Map<String, String> credentialsProperties = new HashMap<String, String>();
-					credentialsProperties.put(ProfileKeyConstants.AWS_ACCESS_KEY_ID, stsCredentials.getAccessKeyId());
-					credentialsProperties.put(ProfileKeyConstants.AWS_SECRET_ACCESS_KEY, stsCredentials.getSecretAccessKey());
-					credentialsProperties.put(ProfileKeyConstants.AWS_SESSION_TOKEN, stsCredentials.getSessionToken());
-
-					ProfilesConfigFileWriter.modifyOneProfile(file, profileName, new Profile(profileName, credentialsProperties, null));
-
-					// save config
-					File configFile = AwsProfileFileLocationProvider.DEFAULT_CONFIG_LOCATION_PROVIDER.getLocation();
-					Map<String, String> regionProperties = new HashMap<String, String>();
-					regionProperties.put(ProfileKeyConstants.REGION, awsRegion);
-
-					ProfilesConfigFileWriter.modifyOneProfile(configFile, profileName, new Profile(profileName, regionProperties, null));
+					saveProfile(file, getAwsFile(CONFIG_FILE_ENV_VAR, "config"), profileName, stsCredentials, awsRegion);
 
 					System.out.println("\n-----------------------------------------------------------------------");
 					System.out.println("Success!\n");
@@ -547,6 +539,116 @@ public class OneloginAWSCLI {
 			}
 		} finally {
 			scanner.close();
+		}
+	}
+
+	// Resolve the file ourselves: the SDK's default provider returns null when the file doesn't exist
+	// yet, and falls back to ~/.aws/config for credentials when only that file exists.
+	static File getAwsFile(String envVar, String fileName) {
+		String override = System.getenv(envVar);
+		if (override != null && !override.isEmpty()) {
+			return new File(override);
+		}
+		return new File(new File(System.getProperty("user.home"), ".aws"), fileName);
+	}
+
+	static void saveProfile(File credentialsFile, File configFile, String profileName, Credentials stsCredentials,
+			String region) throws IOException {
+		Map<String, String> credentialsProperties = new HashMap<String, String>();
+		credentialsProperties.put(ProfileKeyConstants.AWS_ACCESS_KEY_ID, stsCredentials.getAccessKeyId());
+		credentialsProperties.put(ProfileKeyConstants.AWS_SECRET_ACCESS_KEY, stsCredentials.getSecretAccessKey());
+		credentialsProperties.put(ProfileKeyConstants.AWS_SESSION_TOKEN, stsCredentials.getSessionToken());
+
+		createParentDirectory(credentialsFile);
+		ProfilesConfigFileWriter.modifyOneProfile(credentialsFile, profileName, new Profile(profileName, credentialsProperties, null));
+
+		saveRegion(configFile, profileName, region);
+	}
+
+	// ProfilesConfigFileWriter only understands the credentials file format, so it can't be used for the
+	// config file: there, named profiles are "[profile <name>]" sections and "region" isn't a key it updates.
+	static void saveRegion(File configFile, String profileName, String region) throws IOException {
+		List<String> lines = new ArrayList<String>();
+		String lineSeparator = "\n";
+		if (configFile.exists()) {
+			String content = new String(Files.readAllBytes(configFile.toPath()), StandardCharsets.UTF_8);
+			if (content.contains("\r\n")) {
+				lineSeparator = "\r\n";
+			}
+			lines.addAll(Arrays.asList(content.split("\r?\n", -1)));
+			if (lines.get(lines.size() - 1).isEmpty()) {
+				lines.remove(lines.size() - 1);
+			}
+		}
+
+		String regionLine = ProfileKeyConstants.REGION + " = " + region;
+		List<String> output = new ArrayList<String>();
+		boolean inProfile = false;
+		boolean profileFound = false;
+		boolean regionWritten = false;
+		for (String line : lines) {
+			String trimmed = line.trim();
+			if (trimmed.startsWith("[")) {
+				if (inProfile && !regionWritten) {
+					addToSection(output, regionLine);
+				}
+				inProfile = profileName.equals(getConfigSectionProfileName(trimmed));
+				profileFound |= inProfile;
+				regionWritten = false;
+			} else if (inProfile && trimmed.matches(ProfileKeyConstants.REGION + "\\s*=.*")) {
+				line = regionLine;
+				regionWritten = true;
+			}
+			output.add(line);
+		}
+		if (inProfile && !regionWritten) {
+			addToSection(output, regionLine);
+		}
+
+		if (!profileFound) {
+			if (!output.isEmpty() && !output.get(output.size() - 1).trim().isEmpty()) {
+				output.add("");
+			}
+			output.add(profileName.equals("default") ? "[default]" : "[" + PROFILE_PREFIX + profileName + "]");
+			output.add(regionLine);
+		}
+
+		StringBuilder content = new StringBuilder();
+		for (String line : output) {
+			content.append(line).append(lineSeparator);
+		}
+		createParentDirectory(configFile);
+		Files.write(configFile.toPath(), content.toString().getBytes(StandardCharsets.UTF_8));
+	}
+
+	// Returns the profile a config file section header belongs to, or null for other sections (e.g. sso-session)
+	static String getConfigSectionProfileName(String sectionHeader) {
+		if (!sectionHeader.endsWith("]")) {
+			return null;
+		}
+		String name = sectionHeader.substring(1, sectionHeader.length() - 1).trim();
+		if (name.equals("default")) {
+			return name;
+		}
+		if (name.startsWith(PROFILE_PREFIX)) {
+			return name.substring(PROFILE_PREFIX.length()).trim();
+		}
+		return null;
+	}
+
+	// Appends a line to the section that ends the list, keeping it above the blank lines that separate sections
+	private static void addToSection(List<String> lines, String line) {
+		int insertAt = lines.size();
+		while (lines.get(insertAt - 1).trim().isEmpty()) {
+			insertAt--;
+		}
+		lines.add(insertAt, line);
+	}
+
+	private static void createParentDirectory(File file) throws IOException {
+		File parent = file.getAbsoluteFile().getParentFile();
+		if (parent != null && !parent.isDirectory() && !parent.mkdirs()) {
+			throw new IOException("Unable to create directory " + parent.getAbsolutePath());
 		}
 	}
 
