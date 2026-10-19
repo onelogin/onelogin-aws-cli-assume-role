@@ -628,7 +628,13 @@ public class OneloginAWSCLI {
 			if (!output.isEmpty() && !output.get(output.size() - 1).trim().isEmpty()) {
 				output.add("");
 			}
-			output.add(profileName.equals("default") ? "[default]" : "[" + PROFILE_PREFIX + profileName + "]");
+			if (profileName.equals("default")) {
+				output.add("[default]");
+			} else {
+				// the AWS CLI ignores "[profile a b]", so a name with spaces has to be quoted
+				String quote = profileName.matches(".*\\s.*") ? "\"" : "";
+				output.add("[" + PROFILE_PREFIX + quote + profileName + quote + "]");
+			}
 			output.add(regionLine);
 		}
 
@@ -647,20 +653,54 @@ public class OneloginAWSCLI {
 		if (end < 0) {
 			return null;
 		}
-		String name = sectionHeader.substring(1, end).trim();
+		String name = sectionHeader.substring(1, end);
 		if (name.equals("default")) {
 			return name;
 		}
-		if (name.startsWith(PROFILE_PREFIX)) {
-			String profile = name.substring(PROFILE_PREFIX.length()).trim();
-			// the AWS CLI also accepts a quoted name, e.g. [profile "work"]
-			if (profile.length() > 1 && (profile.charAt(0) == '"' || profile.charAt(0) == '\'')
-					&& profile.charAt(profile.length() - 1) == profile.charAt(0)) {
-				profile = profile.substring(1, profile.length() - 1);
-			}
-			return profile;
+		// the AWS CLI splits "profile <name>" headers with shlex, so the name may be quoted or tab-separated
+		List<String> words = splitWords(name);
+		if (words != null && words.size() == 2 && words.get(0).equals(PROFILE_PREFIX.trim())) {
+			return words.get(1);
 		}
 		return null;
+	}
+
+	// Splits on whitespace outside quotes like Python's shlex.split (without backslash escapes);
+	// returns null for an unclosed quote, which shlex rejects
+	private static List<String> splitWords(String text) {
+		List<String> words = new ArrayList<String>();
+		StringBuilder word = null;
+		char quote = 0;
+		for (char c : text.toCharArray()) {
+			if (quote != 0) {
+				if (c == quote) {
+					quote = 0;
+				} else {
+					word.append(c);
+				}
+			} else if (Character.isWhitespace(c)) {
+				if (word != null) {
+					words.add(word.toString());
+					word = null;
+				}
+			} else {
+				if (word == null) {
+					word = new StringBuilder();
+				}
+				if (c == '"' || c == '\'') {
+					quote = c;
+				} else {
+					word.append(c);
+				}
+			}
+		}
+		if (quote != 0) {
+			return null;
+		}
+		if (word != null) {
+			words.add(word.toString());
+		}
+		return words;
 	}
 
 	// Appends a line to the section that ends the list, keeping it above the blank lines that separate sections
