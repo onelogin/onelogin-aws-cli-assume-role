@@ -577,8 +577,10 @@ public class OneloginAWSCLI {
 			String content = new String(Files.readAllBytes(configFile.toPath()), StandardCharsets.UTF_8);
 			if (content.contains("\r\n")) {
 				lineSeparator = "\r\n";
+			} else if (content.contains("\r")) {
+				lineSeparator = "\r";
 			}
-			lines.addAll(Arrays.asList(content.split("\r?\n", -1)));
+			lines.addAll(Arrays.asList(content.split("\r\n|\r|\n", -1)));
 			if (lines.get(lines.size() - 1).isEmpty()) {
 				lines.remove(lines.size() - 1);
 			}
