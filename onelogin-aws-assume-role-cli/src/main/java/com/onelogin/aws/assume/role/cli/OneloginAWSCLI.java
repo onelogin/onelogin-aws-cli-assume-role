@@ -4,9 +4,11 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.AtomicMoveNotSupportedException;
+import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -555,15 +557,20 @@ public class OneloginAWSCLI {
 		return new File(new File(System.getProperty("user.home"), ".aws"), fileName);
 	}
 
-	static void saveProfile(File credentialsFile, File configFile, String profileName, Credentials stsCredentials,
+	static void saveProfile(File credentialsFile, File configFile, final String profileName, Credentials stsCredentials,
 			String region) throws IOException {
-		Map<String, String> credentialsProperties = new HashMap<String, String>();
+		final Map<String, String> credentialsProperties = new HashMap<String, String>();
 		credentialsProperties.put(ProfileKeyConstants.AWS_ACCESS_KEY_ID, stsCredentials.getAccessKeyId());
 		credentialsProperties.put(ProfileKeyConstants.AWS_SECRET_ACCESS_KEY, stsCredentials.getSecretAccessKey());
 		credentialsProperties.put(ProfileKeyConstants.AWS_SESSION_TOKEN, stsCredentials.getSessionToken());
 
-		createParentDirectory(credentialsFile);
-		ProfilesConfigFileWriter.modifyOneProfile(credentialsFile, profileName, new Profile(profileName, credentialsProperties, null));
+		// the SDK writer recreates the file with the process umask, so let it write only to a private copy
+		replaceFile(credentialsFile.toPath(), false, new FileUpdate() {
+			@Override
+			public void apply(File file) {
+				ProfilesConfigFileWriter.modifyOneProfile(file, profileName, new Profile(profileName, credentialsProperties, null));
+			}
+		});
 
 		saveRegion(configFile, profileName, region);
 	}
@@ -646,12 +653,24 @@ public class OneloginAWSCLI {
 		for (String line : output) {
 			content.append(line).append(lineSeparator);
 		}
-		writeAtomically(configFile.toPath(), content.toString());
+		final byte[] bytes = content.toString().getBytes(StandardCharsets.UTF_8);
+		replaceFile(configFile.toPath(), true, new FileUpdate() {
+			@Override
+			public void apply(File file) throws IOException {
+				Files.write(file.toPath(), bytes);
+			}
+		});
 	}
 
-	// Writes a temporary file and renames it over the target, so a failed write can't truncate the config.
-	// A symlinked config keeps its link, and the file keeps its permissions.
-	private static void writeAtomically(Path target, String content) throws IOException {
+	private interface FileUpdate {
+		void apply(File file) throws IOException;
+	}
+
+	// Applies the update to a copy of the file in a private temporary directory beside it, then renames the copy
+	// into place, so a failed write can't truncate the file and no other user can read it while it's written.
+	// A symlinked file keeps its link. The result is readable only by its owner, unless keepPermissions is set
+	// and the file already exists.
+	private static void replaceFile(Path target, boolean keepPermissions, FileUpdate update) throws IOException {
 		// follow links ourselves, since toRealPath() fails on a link to a file that doesn't exist yet
 		target = target.toAbsolutePath();
 		for (int links = 0; Files.isSymbolicLink(target); links++) {
@@ -662,15 +681,18 @@ public class OneloginAWSCLI {
 		}
 		Files.createDirectories(target.getParent());
 		boolean exists = Files.exists(target);
-		Path temp = Files.createTempFile(target.getParent(), "." + target.getFileName(), ".tmp");
+		Path tempDirectory = Files.createTempDirectory(target.getParent(), ".onelogin-aws-cli");
 		try {
-			Files.write(temp, content.getBytes(StandardCharsets.UTF_8));
+			Path temp = tempDirectory.resolve(target.getFileName());
 			if (exists) {
-				try {
-					Files.setPosixFilePermissions(temp, Files.getPosixFilePermissions(target));
-				} catch (UnsupportedOperationException e) {
-					// not a POSIX file system
-				}
+				Files.copy(target, temp);
+			}
+			update.apply(temp.toFile());
+			try {
+				Files.setPosixFilePermissions(temp, keepPermissions && exists
+						? Files.getPosixFilePermissions(target) : PosixFilePermissions.fromString("rw-------"));
+			} catch (UnsupportedOperationException e) {
+				// not a POSIX file system
 			}
 			try {
 				Files.move(temp, target, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
@@ -678,7 +700,13 @@ public class OneloginAWSCLI {
 				Files.move(temp, target, StandardCopyOption.REPLACE_EXISTING);
 			}
 		} finally {
-			Files.deleteIfExists(temp);
+			// also removes any backup the SDK writer left behind
+			try (DirectoryStream<Path> leftovers = Files.newDirectoryStream(tempDirectory)) {
+				for (Path leftover : leftovers) {
+					Files.delete(leftover);
+				}
+			}
+			Files.delete(tempDirectory);
 		}
 	}
 
@@ -761,13 +789,6 @@ public class OneloginAWSCLI {
 			insertAt--;
 		}
 		lines.add(insertAt, line);
-	}
-
-	private static void createParentDirectory(File file) throws IOException {
-		File parent = file.getAbsoluteFile().getParentFile();
-		if (parent != null && !parent.isDirectory() && !parent.mkdirs()) {
-			throw new IOException("Unable to create directory " + parent.getAbsolutePath());
-		}
 	}
 
 	public static Integer getSelection(Scanner scanner, int max)
