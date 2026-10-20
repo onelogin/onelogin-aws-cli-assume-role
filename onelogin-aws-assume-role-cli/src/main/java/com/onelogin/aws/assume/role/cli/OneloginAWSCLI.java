@@ -3,7 +3,10 @@ package com.onelogin.aws.assume.role.cli;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -642,7 +645,34 @@ public class OneloginAWSCLI {
 			content.append(line).append(lineSeparator);
 		}
 		createParentDirectory(configFile);
-		Files.write(configFile.toPath(), content.toString().getBytes(StandardCharsets.UTF_8));
+		writeAtomically(configFile.toPath(), content.toString());
+	}
+
+	// Writes a temporary file and renames it over the target, so a failed write can't truncate the config.
+	// A symlinked config keeps its link, and the file keeps its permissions.
+	private static void writeAtomically(Path target, String content) throws IOException {
+		boolean exists = Files.exists(target);
+		if (exists) {
+			target = target.toRealPath();
+		}
+		Path temp = Files.createTempFile(target.toAbsolutePath().getParent(), "." + target.getFileName(), ".tmp");
+		try {
+			Files.write(temp, content.getBytes(StandardCharsets.UTF_8));
+			if (exists) {
+				try {
+					Files.setPosixFilePermissions(temp, Files.getPosixFilePermissions(target));
+				} catch (UnsupportedOperationException e) {
+					// not a POSIX file system
+				}
+			}
+			try {
+				Files.move(temp, target, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+			} catch (AtomicMoveNotSupportedException e) {
+				Files.move(temp, target, StandardCopyOption.REPLACE_EXISTING);
+			}
+		} finally {
+			Files.deleteIfExists(temp);
+		}
 	}
 
 	// Returns the profile a config file section header belongs to, or null for other sections (e.g. sso-session)
