@@ -678,7 +678,7 @@ public class OneloginAWSCLI {
 		char quote = 0;
 		for (int i = 0; i < text.length(); i++) {
 			char c = text.charAt(i);
-			if (quote == 0 && Character.isWhitespace(c)) {
+			if (quote == 0 && " \t\r\n".indexOf(c) >= 0) {
 				if (word != null) {
 					words.add(word.toString());
 					word = null;
