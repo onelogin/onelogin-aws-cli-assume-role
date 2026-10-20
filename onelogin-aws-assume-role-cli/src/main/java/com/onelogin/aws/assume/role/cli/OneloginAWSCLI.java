@@ -282,7 +282,7 @@ public class OneloginAWSCLI {
 		options.addOption(null, "onelogin-client-secret", true, "A valid OneLogin API client_secret");
 		options.addOption(null, "onelogin-region", true, "Onelogin region. us or eu  (Default value: us)");
 		options.addOption(null, "ip", true, "The IP address to use for the SAML assertion");
-		options.addOption(null, "saml-api-version", true, "The version of the OneLogin SAML APIs to use (Default value 1)");
+		options.addOption(null, "saml-api-version", true, "The version of the OneLogin SAML APIs to use (Default value 2)");
 
 		return options;
 	}
