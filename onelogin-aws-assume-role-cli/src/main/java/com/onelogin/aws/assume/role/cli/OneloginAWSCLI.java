@@ -631,9 +631,7 @@ public class OneloginAWSCLI {
 			if (profileName.equals("default")) {
 				output.add("[default]");
 			} else {
-				// the AWS CLI ignores "[profile a b]", so a name with spaces has to be quoted
-				String quote = profileName.matches(".*\\s.*") ? "\"" : "";
-				output.add("[" + PROFILE_PREFIX + quote + profileName + quote + "]");
+				output.add("[" + PROFILE_PREFIX + quoteProfileName(profileName) + "]");
 			}
 			output.add(regionLine);
 		}
@@ -665,33 +663,48 @@ public class OneloginAWSCLI {
 		return null;
 	}
 
-	// Splits on whitespace outside quotes like Python's shlex.split (without backslash escapes);
-	// returns null for an unclosed quote, which shlex rejects
+	// Quotes a name for a "[profile <name>]" header when shlex wouldn't read it back as that one word
+	private static String quoteProfileName(String name) {
+		if (!name.isEmpty() && !name.matches(".*[\\s'\"\\\\].*")) {
+			return name;
+		}
+		return "\"" + name.replace("\\", "\\\\").replace("\"", "\\\"") + "\"";
+	}
+
+	// Splits text like Python's shlex.split; returns null where shlex raises (unclosed quote or trailing "\")
 	private static List<String> splitWords(String text) {
 		List<String> words = new ArrayList<String>();
 		StringBuilder word = null;
 		char quote = 0;
-		for (char c : text.toCharArray()) {
-			if (quote != 0) {
+		for (int i = 0; i < text.length(); i++) {
+			char c = text.charAt(i);
+			if (quote == 0 && Character.isWhitespace(c)) {
+				if (word != null) {
+					words.add(word.toString());
+					word = null;
+				}
+				continue;
+			}
+			if (word == null) {
+				word = new StringBuilder();
+			}
+			if (quote == '\'') {
+				// everything inside single quotes is literal
 				if (c == quote) {
 					quote = 0;
 				} else {
 					word.append(c);
 				}
-			} else if (Character.isWhitespace(c)) {
-				if (word != null) {
-					words.add(word.toString());
-					word = null;
+			} else if (c == '\\' && (quote == 0 || (i + 1 < text.length() && "\"\\".indexOf(text.charAt(i + 1)) >= 0))) {
+				// outside quotes a backslash escapes any character; inside double quotes only " and \
+				if (++i == text.length()) {
+					return null;
 				}
+				word.append(text.charAt(i));
+			} else if (c == '"' || (quote == 0 && c == '\'')) {
+				quote = quote == 0 ? c : 0;
 			} else {
-				if (word == null) {
-					word = new StringBuilder();
-				}
-				if (c == '"' || c == '\'') {
-					quote = c;
-				} else {
-					word.append(c);
-				}
+				word.append(c);
 			}
 		}
 		if (quote != 0) {
