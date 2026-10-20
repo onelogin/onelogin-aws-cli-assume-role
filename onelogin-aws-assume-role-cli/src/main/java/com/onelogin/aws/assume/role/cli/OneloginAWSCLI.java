@@ -604,7 +604,8 @@ public class OneloginAWSCLI {
 			}
 			if (trimmed.startsWith("[")) {
 				if (inProfile && !regionWritten) {
-					addToSection(output, indent + regionLine);
+					// in a section without options, indent like this header so it isn't read as our continuation
+					addToSection(output, (inOption ? indent : lineIndent) + regionLine);
 				}
 				inProfile = profileName.equals(getConfigSectionProfileName(trimmed));
 				profileFound |= inProfile;
