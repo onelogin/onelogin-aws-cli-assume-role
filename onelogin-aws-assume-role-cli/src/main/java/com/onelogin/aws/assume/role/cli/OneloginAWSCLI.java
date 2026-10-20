@@ -644,18 +644,23 @@ public class OneloginAWSCLI {
 		for (String line : output) {
 			content.append(line).append(lineSeparator);
 		}
-		createParentDirectory(configFile);
 		writeAtomically(configFile.toPath(), content.toString());
 	}
 
 	// Writes a temporary file and renames it over the target, so a failed write can't truncate the config.
 	// A symlinked config keeps its link, and the file keeps its permissions.
 	private static void writeAtomically(Path target, String content) throws IOException {
-		boolean exists = Files.exists(target);
-		if (exists) {
-			target = target.toRealPath();
+		// follow links ourselves, since toRealPath() fails on a link to a file that doesn't exist yet
+		target = target.toAbsolutePath();
+		for (int links = 0; Files.isSymbolicLink(target); links++) {
+			if (links == 40) {
+				throw new IOException("Too many levels of symbolic links: " + target);
+			}
+			target = target.resolveSibling(Files.readSymbolicLink(target));
 		}
-		Path temp = Files.createTempFile(target.toAbsolutePath().getParent(), "." + target.getFileName(), ".tmp");
+		Files.createDirectories(target.getParent());
+		boolean exists = Files.exists(target);
+		Path temp = Files.createTempFile(target.getParent(), "." + target.getFileName(), ".tmp");
 		try {
 			Files.write(temp, content.getBytes(StandardCharsets.UTF_8));
 			if (exists) {
