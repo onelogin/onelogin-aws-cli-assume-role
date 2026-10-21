@@ -2,6 +2,8 @@ package com.onelogin.aws.assume.role.cli;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.DirectoryStream;
@@ -16,6 +18,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
 
@@ -52,6 +55,8 @@ public class OneloginAWSCLI {
 	private static final String PROFILE_PREFIX = "profile ";
 	private static final String CREDENTIALS_FILE_ENV_VAR = "AWS_CREDENTIAL_PROFILES_FILE";
 	private static final String CONFIG_FILE_ENV_VAR = "AWS_CONFIG_FILE";
+	private static final String PROPERTIES_FILE = "onelogin.sdk.properties";
+	private static final String DEFAULTS_PREFIX = "onelogin.cli.";
 	private static int time = 45;
 	private static int loop = 1;
 	private static String profileName = null;
@@ -121,32 +126,27 @@ public class OneloginAWSCLI {
 				}
 			}
 
-			if (commandLine.hasOption("username")) {
-				value = commandLine.getOptionValue("username");
-				if (value != null && !value.isEmpty()) {
-					oneloginUsernameOrEmail = value;
-				}
+			// The options that replace a prompt (except the secret ones) can also be set in onelogin.sdk.properties
+			Properties defaults = loadDefaults();
+
+			value = getOptionValue(commandLine, defaults, "username");
+			if (value != null && !value.isEmpty()) {
+				oneloginUsernameOrEmail = value;
 			}
 
-			if (commandLine.hasOption("subdomain")) {
-				value = commandLine.getOptionValue("subdomain");
-				if (value != null && !value.isEmpty()) {
-					oneloginDomain = value;
-				}
+			value = getOptionValue(commandLine, defaults, "subdomain");
+			if (value != null && !value.isEmpty()) {
+				oneloginDomain = value;
 			}
 
-			if (commandLine.hasOption("appid")) {
-				value = commandLine.getOptionValue("appid");
-				if (value != null && !value.isEmpty()) {
-					appId = value;
-				}
+			value = getOptionValue(commandLine, defaults, "appid");
+			if (value != null && !value.isEmpty()) {
+				appId = value;
 			}
 
-			if (commandLine.hasOption("region")) {
-				value = commandLine.getOptionValue("region");
-				if (value != null && !value.isEmpty()) {
-					awsRegion = value;
-				}
+			value = getOptionValue(commandLine, defaults, "region");
+			if (value != null && !value.isEmpty()) {
+				awsRegion = value;
 			}
 
 			if (commandLine.hasOption("password")) {
@@ -163,29 +163,23 @@ public class OneloginAWSCLI {
 				}
 			}
 
-			if (commandLine.hasOption("mfa-device-index")) {
-				value = commandLine.getOptionValue("mfa-device-index");
-				if (value != null && !value.isEmpty()) {
-					try {
-						mfaDeviceIndex = Integer.valueOf(value);
-					} catch (NumberFormatException e) {
-						System.out.println("Warning: --mfa-device-index must be an integer; ignoring value: " + value);
-					}
+			value = getOptionValue(commandLine, defaults, "mfa-device-index");
+			if (value != null && !value.isEmpty()) {
+				try {
+					mfaDeviceIndex = Integer.valueOf(value);
+				} catch (NumberFormatException e) {
+					System.out.println("Warning: mfa-device-index must be an integer; ignoring value: " + value);
 				}
 			}
 
-			if (commandLine.hasOption("aws-account-id")) {
-				value = commandLine.getOptionValue("aws-account-id");
-				if (value != null && !value.isEmpty()) {
-					awsAccountId = value;
-				}
+			value = getOptionValue(commandLine, defaults, "aws-account-id");
+			if (value != null && !value.isEmpty()) {
+				awsAccountId = value;
 			}
 
-			if (commandLine.hasOption("aws-role-name")) {
-				value = commandLine.getOptionValue("aws-role-name");
-				if (value != null && !value.isEmpty()) {
-					awsRoleName = value;
-				}
+			value = getOptionValue(commandLine, defaults, "aws-role-name");
+			if (value != null && !value.isEmpty()) {
+				awsRoleName = value;
 			}
 
 			if (commandLine.hasOption("duration")) {
@@ -245,7 +239,7 @@ public class OneloginAWSCLI {
 			// VALIDATIONS
 
 			if (((awsAccountId != null && !awsAccountId.isEmpty()) && (awsRoleName == null || awsRoleName.isEmpty())) || ((awsRoleName != null && !awsRoleName.isEmpty()) && (awsAccountId == null || awsAccountId.isEmpty()))) {
-				System.err.println("--aws-account-id and --aws-role-name need to be set together");
+				System.err.println("--aws-account-id and --aws-role-name need to be set together (on the command line or in " + PROPERTIES_FILE + ")");
 				return false;
 			}
 
@@ -285,6 +279,34 @@ public class OneloginAWSCLI {
 		options.addOption(null, "saml-api-version", true, "The version of the OneLogin SAML APIs to use (Default value 2)");
 
 		return options;
+	}
+
+	// The same onelogin.sdk.properties the OneLogin SDK loads from the classpath (the copy next to the jar).
+	// The SDK only reads its own onelogin.sdk.* keys. There may be no file when the API credentials are
+	// passed on the command line.
+	static Properties loadDefaults() {
+		Properties defaults = new Properties();
+		try (InputStream input = OneloginAWSCLI.class.getClassLoader().getResourceAsStream(PROPERTIES_FILE)) {
+			if (input != null) {
+				defaults.load(new InputStreamReader(input, StandardCharsets.UTF_8));
+			}
+		} catch (IOException e) {
+			System.err.println("Warning: could not read " + PROPERTIES_FILE + ": " + e.getMessage());
+		}
+		return defaults;
+	}
+
+	// The option's command-line value or, when it isn't given there, its "onelogin.cli.<option>" property.
+	// The property is trimmed because Properties keeps trailing blanks, which are easy to miss in the file.
+	static String getOptionValue(CommandLine commandLine, Properties defaults, String option) {
+		String value = commandLine.getOptionValue(option);
+		if (value == null || value.isEmpty()) {
+			value = defaults.getProperty(DEFAULTS_PREFIX + option);
+			if (value != null) {
+				value = value.trim();
+			}
+		}
+		return value;
 	}
 
 	public static void main(String[] commandLineArguments) throws Exception {
@@ -860,7 +882,7 @@ public class OneloginAWSCLI {
 						deviceInput = mfaDeviceIndex;
 					} else {
 						if (mfaDeviceIndex != null) {
-							System.out.println("--mfa-device-index " + mfaDeviceIndex + " is out of range [0-" + (devices.size() - 1) + "]; falling back to interactive selection.");
+							System.out.println("mfa-device-index " + mfaDeviceIndex + " is out of range [0-" + (devices.size() - 1) + "]; falling back to interactive selection.");
 						}
 						for (int i = 0; i < devices.size(); i++) {
 							device = devices.get(i);

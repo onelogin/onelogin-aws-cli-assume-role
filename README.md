@@ -104,6 +104,20 @@ In addition the onelogin-aws-assume-role-cli is able to read those SDK attribute
 - onelogin-client-secret
 - onelogin-region
 
+The onelogin-aws-assume-role-cli can also read the values it would otherwise prompt for from the same *onelogin.sdk.properties* file (the one next to *onelogin-aws-cli.jar*), so you don't have to type them on every run. Each key is `onelogin.cli.` followed by the long name of the command-line option it stands in for, and the option wins when both are set. All of them are optional; leave a key empty or out to keep the prompt:
+
+```
+onelogin.cli.username=user@example.com
+onelogin.cli.subdomain=mycompany
+onelogin.cli.appid=123456
+onelogin.cli.region=us-west-2
+onelogin.cli.aws-account-id=123456789012
+onelogin.cli.aws-role-name=Developer
+onelogin.cli.mfa-device-index=0
+```
+
+`onelogin.cli.region` is the AWS region (`--region`), while `onelogin.sdk.region` stays the region of your OneLogin instance. The password and OTP token can't be set there.
+
 ### How the process works
 
 #### Step 1. Provide OneLogin data.
@@ -167,7 +181,8 @@ username (`--username`),
 App ID (`--appid`),
 subdomain (`--subdomain`) or
 AWS region (`--region`)
-every time, you can specify these parameters as command-line arguments and
+every time, you can specify these parameters as command-line arguments, or as
+`onelogin.cli.*` keys in *onelogin.sdk.properties* (see [Settings](#settings)), and
 the tool won't ask for them any more._
 
 The selection of the AWS account and Role can be also be done with the --aws-account-id and --aws-role-name parameters.
