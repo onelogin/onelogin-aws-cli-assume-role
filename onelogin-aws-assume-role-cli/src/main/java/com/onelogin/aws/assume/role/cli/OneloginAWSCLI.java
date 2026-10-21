@@ -297,16 +297,14 @@ public class OneloginAWSCLI {
 	}
 
 	// The option's command-line value or, when it isn't given there, its "onelogin.cli.<option>" property.
+	// An empty command-line value still wins, so it brings the prompt back for one run.
 	// The property is trimmed because Properties keeps trailing blanks, which are easy to miss in the file.
 	static String getOptionValue(CommandLine commandLine, Properties defaults, String option) {
-		String value = commandLine.getOptionValue(option);
-		if (value == null || value.isEmpty()) {
-			value = defaults.getProperty(DEFAULTS_PREFIX + option);
-			if (value != null) {
-				value = value.trim();
-			}
+		if (commandLine.hasOption(option)) {
+			return commandLine.getOptionValue(option);
 		}
-		return value;
+		String value = defaults.getProperty(DEFAULTS_PREFIX + option);
+		return value == null ? null : value.trim();
 	}
 
 	public static void main(String[] commandLineArguments) throws Exception {

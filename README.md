@@ -104,7 +104,7 @@ In addition the onelogin-aws-assume-role-cli is able to read those SDK attribute
 - onelogin-client-secret
 - onelogin-region
 
-The onelogin-aws-assume-role-cli can also read the values it would otherwise prompt for from the same *onelogin.sdk.properties* file (the one next to *onelogin-aws-cli.jar*), so you don't have to type them on every run. Each key is `onelogin.cli.` followed by the long name of the command-line option it stands in for, and the option wins when both are set. All of them are optional; leave a key empty or out to keep the prompt:
+The onelogin-aws-assume-role-cli can also read the values it would otherwise prompt for from the same *onelogin.sdk.properties* file (the one next to *onelogin-aws-cli.jar*), so you don't have to type them on every run. Each key is `onelogin.cli.` followed by the long name of the command-line option it stands in for, and the option wins when both are set, even when it's empty (`--appid ''` brings the prompt back for that run). All of them are optional; leave a key empty or out to keep the prompt:
 
 ```
 onelogin.cli.username=user@example.com
