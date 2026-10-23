@@ -99,12 +99,20 @@ Both projects uses a settings file, where [OneLogin SDK properties](https://gith
 
 Read more about Onelogin API credentials at: https://developers.onelogin.com/api-docs/1/getting-started/working-with-api-credentials
 
+The onelogin-aws-assume-role-cli reads *onelogin.sdk.properties* from the `.onelogin` folder in your home directory (`~/.onelogin`, or `%USERPROFILE%\.onelogin` on Windows), the folder the [Python version](https://github.com/onelogin/onelogin-python-aws-assume-role) of this tool reads its settings from too. When there's no *onelogin.sdk.properties* there, it uses the one next to *onelogin-aws-cli.jar*. Only one of the two files is read, so they aren't merged. The file holds your API client secret, so keep it readable only by you:
+
+```sh
+mkdir -p ~/.onelogin
+cp onelogin.sdk.properties ~/.onelogin/
+chmod 600 ~/.onelogin/onelogin.sdk.properties
+```
+
 In addition the onelogin-aws-assume-role-cli is able to read those SDK attributes from the command line:
 - onelogin-client-id
 - onelogin-client-secret
 - onelogin-region
 
-The onelogin-aws-assume-role-cli can also read the values it would otherwise prompt for from the same *onelogin.sdk.properties* file (the one next to *onelogin-aws-cli.jar*), so you don't have to type them on every run. Each key is `onelogin.cli.` followed by the long name of the command-line option it stands in for, and the option wins when both are set, even when it's empty (`--appid ''` brings the prompt back for that run). All of them are optional; leave a key empty or out to keep the prompt:
+The onelogin-aws-assume-role-cli can also read the values it would otherwise prompt for from the same *onelogin.sdk.properties* file, so you don't have to type them on every run. Each key is `onelogin.cli.` followed by the long name of the command-line option it stands in for, and the option wins when both are set, even when it's empty (`--appid ''` brings the prompt back for that run). All of them are optional; leave a key empty or out to keep the prompt:
 
 ```
 onelogin.cli.username=user@example.com

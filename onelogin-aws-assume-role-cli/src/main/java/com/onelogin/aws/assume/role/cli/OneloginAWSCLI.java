@@ -1,6 +1,7 @@
 package com.onelogin.aws.assume.role.cli;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -49,6 +50,7 @@ import com.onelogin.sdk.conn.Client;
 import com.onelogin.sdk.model.Device;
 import com.onelogin.sdk.model.MFA;
 import com.onelogin.sdk.model.SAMLEndpointResponse;
+import com.onelogin.sdk.util.Settings;
 
 public class OneloginAWSCLI {
 
@@ -57,6 +59,11 @@ public class OneloginAWSCLI {
 	private static final String CONFIG_FILE_ENV_VAR = "AWS_CONFIG_FILE";
 	private static final String PROPERTIES_FILE = "onelogin.sdk.properties";
 	private static final String DEFAULTS_PREFIX = "onelogin.cli.";
+	// Used instead of the onelogin.sdk.properties next to the jar when it exists, like the Python tool's
+	// ~/.onelogin/onelogin.sdk.json
+	private static final File HOME_PROPERTIES_FILE = new File(new File(System.getProperty("user.home"), ".onelogin"), PROPERTIES_FILE);
+	private static Properties properties = new Properties();
+	private static boolean propertiesFromHome = false;
 	private static int time = 45;
 	private static int loop = 1;
 	private static String profileName = null;
@@ -127,24 +134,24 @@ public class OneloginAWSCLI {
 			}
 
 			// The options that replace a prompt (except the secret ones) can also be set in onelogin.sdk.properties
-			Properties defaults = loadDefaults();
+			loadProperties();
 
-			value = getOptionValue(commandLine, defaults, "username");
+			value = getOptionValue(commandLine, properties, "username");
 			if (value != null && !value.isEmpty()) {
 				oneloginUsernameOrEmail = value;
 			}
 
-			value = getOptionValue(commandLine, defaults, "subdomain");
+			value = getOptionValue(commandLine, properties, "subdomain");
 			if (value != null && !value.isEmpty()) {
 				oneloginDomain = value;
 			}
 
-			value = getOptionValue(commandLine, defaults, "appid");
+			value = getOptionValue(commandLine, properties, "appid");
 			if (value != null && !value.isEmpty()) {
 				appId = value;
 			}
 
-			value = getOptionValue(commandLine, defaults, "region");
+			value = getOptionValue(commandLine, properties, "region");
 			if (value != null && !value.isEmpty()) {
 				awsRegion = value;
 			}
@@ -163,7 +170,7 @@ public class OneloginAWSCLI {
 				}
 			}
 
-			value = getOptionValue(commandLine, defaults, "mfa-device-index");
+			value = getOptionValue(commandLine, properties, "mfa-device-index");
 			if (value != null && !value.isEmpty()) {
 				try {
 					mfaDeviceIndex = Integer.valueOf(value);
@@ -172,12 +179,12 @@ public class OneloginAWSCLI {
 				}
 			}
 
-			value = getOptionValue(commandLine, defaults, "aws-account-id");
+			value = getOptionValue(commandLine, properties, "aws-account-id");
 			if (value != null && !value.isEmpty()) {
 				awsAccountId = value;
 			}
 
-			value = getOptionValue(commandLine, defaults, "aws-role-name");
+			value = getOptionValue(commandLine, properties, "aws-role-name");
 			if (value != null && !value.isEmpty()) {
 				awsRoleName = value;
 			}
@@ -281,19 +288,34 @@ public class OneloginAWSCLI {
 		return options;
 	}
 
-	// The same onelogin.sdk.properties the OneLogin SDK loads from the classpath (the copy next to the jar).
-	// The SDK only reads its own onelogin.sdk.* keys. There may be no file when the API credentials are
-	// passed on the command line.
-	static Properties loadDefaults() {
-		Properties defaults = new Properties();
-		try (InputStream input = OneloginAWSCLI.class.getClassLoader().getResourceAsStream(PROPERTIES_FILE)) {
+	// Loads ~/.onelogin/onelogin.sdk.properties or, when it doesn't exist, the one the OneLogin SDK loads from the
+	// classpath (the copy next to the jar). The SDK only reads its own onelogin.sdk.* keys. There may be no file
+	// when the API credentials are passed on the command line.
+	static void loadProperties() {
+		propertiesFromHome = HOME_PROPERTIES_FILE.isFile();
+		properties = new Properties();
+		try (InputStream input = propertiesFromHome ? new FileInputStream(HOME_PROPERTIES_FILE)
+				: OneloginAWSCLI.class.getClassLoader().getResourceAsStream(PROPERTIES_FILE)) {
 			if (input != null) {
-				defaults.load(new InputStreamReader(input, StandardCharsets.UTF_8));
+				properties.load(new InputStreamReader(input, StandardCharsets.UTF_8));
 			}
 		} catch (IOException e) {
+			if (propertiesFromHome) {
+				// rather than log in to the API without the credentials the user put there
+				System.err.println("Error: could not read " + PROPERTIES_FILE + ": " + e.getMessage());
+				System.exit(1);
+			}
 			System.err.println("Warning: could not read " + PROPERTIES_FILE + ": " + e.getMessage());
 		}
-		return defaults;
+	}
+
+	// A onelogin.sdk.* setting read the way the SDK reads it: trimmed, and null when it's empty
+	static String getSetting(String key) {
+		String value = properties.getProperty(key);
+		if (value == null || value.trim().isEmpty()) {
+			return null;
+		}
+		return value.trim();
 	}
 
 	// The option's command-line value or, when it isn't given there, its "onelogin.cli.<option>" property.
@@ -318,7 +340,26 @@ public class OneloginAWSCLI {
 		// OneLogin Java SDK Client
 		Client olClient;
 		if ((oneloginClientID == null || oneloginClientID.isEmpty()) && (oneloginClientSecret == null || oneloginClientSecret.isEmpty())) {
-			olClient = new Client();
+			if (propertiesFromHome) {
+				// the SDK only loads its settings file from the classpath, so it gets the ones from ~/.onelogin passed in
+				olClient = new Client(getSetting(Settings.CLIENT_ID_KEY), getSetting(Settings.CLIENT_SECRET_KEY),
+						getSetting(Settings.REGION), getSetting(Settings.SUBDOMAIN), true);
+				if (ip == null) {
+					ip = getSetting(Settings.IP);
+				}
+			} else {
+				try {
+					olClient = new Client();
+				} catch (com.onelogin.sdk.exception.Error e) {
+					if (e.getErrorCode() != com.onelogin.sdk.exception.Error.SETTINGS_FILE_NOT_FOUND) {
+						throw e;
+					}
+					System.err.println("No " + PROPERTIES_FILE + " in " + HOME_PROPERTIES_FILE.getParent() + " or next to the jar:"
+							+ " create one, or pass --onelogin-client-id and --onelogin-client-secret");
+					System.exit(1);
+					return;
+				}
+			}
 		} else {
 			olClient = new Client(oneloginClientID, oneloginClientSecret, oneloginRegion);
 		}
