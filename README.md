@@ -22,6 +22,16 @@ The "[Configuring SAML for Amazon Web Services (AWS) with Multiple Accounts and 
  - Add external roles to give OneLogin access to your AWS accounts
  - Complete your AWS Multi Account configuration in OneLogin
 
+## Install with Homebrew
+
+On macOS or Linux:
+
+```sh
+brew install onelogin/tap/onelogin-aws-cli-assume-role
+```
+
+That installs the `onelogin-aws-cli` command, which runs the same jar with Homebrew's Java, so `onelogin-aws-cli --profile profilename` works like the `java -jar` examples below. Put your settings in `~/.onelogin/onelogin.sdk.properties` (see [Settings](#settings)). `brew upgrade` brings in new releases and leaves that file alone.
+
 ## Quick Start using precompiled binary
 
 There is a precompiled [onelogin-aws-cli.jar](https://github.com/onelogin/onelogin-aws-cli-assume-role/blob/master/onelogin-aws-assume-role-cli/dist/onelogin-aws-cli.jar) file in the `onelogin-aws-assume-role-cli/dist` folder that you can download and start using this tool immediately (once configured the required [settings](https://github.com/onelogin/onelogin-aws-cli-assume-role#settings))
