@@ -6,11 +6,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.AccessDeniedException;
 import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -292,7 +294,15 @@ public class OneloginAWSCLI {
 	// classpath (the copy next to the jar). The SDK only reads its own onelogin.sdk.* keys. There may be no file
 	// when the API credentials are passed on the command line.
 	static void loadProperties() {
-		propertiesFromHome = HOME_PROPERTIES_FILE.isFile();
+		try {
+			propertiesFromHome = Files.readAttributes(HOME_PROPERTIES_FILE.toPath(), BasicFileAttributes.class).isRegularFile();
+		} catch (AccessDeniedException e) {
+			// no permission to look in ~/.onelogin: reading it below fails, rather than silently using the copy next to the jar
+			propertiesFromHome = true;
+		} catch (IOException e) {
+			// it doesn't exist
+			propertiesFromHome = false;
+		}
 		properties = new Properties();
 		try (InputStream input = propertiesFromHome ? new FileInputStream(HOME_PROPERTIES_FILE)
 				: OneloginAWSCLI.class.getClassLoader().getResourceAsStream(PROPERTIES_FILE)) {
